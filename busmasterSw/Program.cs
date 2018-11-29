@@ -267,6 +267,8 @@ class Program {
         jtag.rwNBits(6,b1,false);
 
         jtag.clockN(32);
+
+        // === run the command sequence that was constructed in memory ===
         jtag.exec();
     }
 
