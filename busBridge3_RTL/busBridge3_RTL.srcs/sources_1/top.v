@@ -67,16 +67,16 @@ endmodule
 
 // connects to jtagByteIf on the JTAG side, provides a simple bus interface on the application side
 module busBridge3
-  (i_CLK, 	// application-side clock
+  (i_CLK,
 
-   // towards jtagByteIf (JTAG clock domain)
+   // towards jtagByteIf
    i_dataRx,
    i_strobeRx,
    o_dataTx,
    i_strobeTx,
    i_strobeSync,
    
-   // application-side bus interface (i_CLK)
+   // application-side bus interface
    o_busAddr,
    o_busData,
    i_busData,
