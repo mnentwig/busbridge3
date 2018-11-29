@@ -1,5 +1,5 @@
 `default_nettype none
-
+  
 // provides byte-level interface to the USERx opcode of the FPGA's JTAG port
 // change in o_toggle signals an event
 module jtagByteIf(i_dataTx, o_dataRx, o_tx, o_rx, o_sync, o_toggle);
@@ -22,11 +22,11 @@ module jtagByteIf(i_dataTx, o_dataRx, o_tx, o_rx, o_sync, o_toggle);
       .SHIFT(   JTAGBSCANE2_SHIFT),
       .TDI(     JTAGBSCANE2_TDI),
       .TDO(	JTAGBSCANE2_TDO),
-      .UPDATE(  /*pio5*/),
-      .RESET(   /*pio6*/),
-      .RUNTEST( /*pio7*/),
-      .SEL(     /*pio8*/),
-      .TCK(     /*pio9*/),
+      .UPDATE(),
+      .RESET(),
+      .RUNTEST(),
+      .SEL(),
+      .TCK(),
       .TMS());
    
    reg [7:0] 	    shifterTx = 8'd0;
@@ -42,22 +42,22 @@ module jtagByteIf(i_dataTx, o_dataRx, o_tx, o_rx, o_sync, o_toggle);
       if (JTAGBSCANE2_CAPT) begin
 	 bitCount 	<= 3'd0;
 	 shifterTx 	<= i_dataTx;
-	 // === XCD: set all outputs ===
+	 // === CDX: set all outputs ===
 	 o_tx	 	<= 1'b1;
 	 o_rx		<= 1'b0;
 	 o_sync		<= 1'b1;
-	 // === XCD: raise event ===
+	 // === CDX: raise event ===
 	 o_toggle	<= ~o_toggle;	 
       end else if (JTAGBSCANE2_SHIFT) begin
 	 bitCount <= bitCount + 3'd1;	 
 	 if (bitCount == 3'd7) begin
 	    shifterTx 	<= i_dataTx;
 	    o_dataRx 	<= nextShifterRx;
-	    // === XCD: set all outputs ===
+	    // === CDX: set all outputs ===
 	    o_tx 	<= 1'b1;
 	    o_rx	<= 1'b1;
 	    o_sync 	<= 1'b0;
-	    // === XCD: raise event ===
+	    // === CDX: raise event ===
 	    o_toggle	<= ~o_toggle;	 
 	 end
       end
@@ -68,13 +68,15 @@ endmodule
 // connects to jtagByteIf on the JTAG side, provides a simple bus interface on the application side
 module busBridge3
   (i_CLK, 	// application-side clock
+
+   // towards jtagByteIf (JTAG clock domain)
    i_dataRx,
    i_strobeRx,
    o_dataTx,
    i_strobeTx,
    i_strobeSync,
    
-   // application-side bus interface
+   // application-side bus interface (i_CLK)
    o_busAddr,
    o_busData,
    i_busData,
@@ -108,7 +110,8 @@ module busBridge3
    reg [31:0] 	     shiftOut = 32'd0;
    wire [31:0] 	     nextShiftOut = {8'd0, shiftOut[31:8]};
    assign o_dataTx = shiftOut[7:0];
-   
+
+   // FSM states. Note, state indices equal the command token sent by SW
    localparam STATE_IDLE = 8'd0;
    localparam STATE_ADDRINC = 8'd1;
    localparam STATE_WORDWIDTH = 8'd2;
@@ -287,7 +290,7 @@ module busBridge3
 		 nRemMinusOne <= 2'd0;		 	      
 	      end
 	    endcase
-	 end // if nRemMinusOne bytes read
+	 end // if the active state has received enough bytes (nRemMinusOne bytes read)
       end // if byte in
 
       // === reset on new selection of USER1 mode ===
@@ -299,7 +302,7 @@ module busBridge3
    end   
 endmodule
 
-// XDC: outputs single o_strobe pulse on change of i_toggle 
+// CDX helper: outputs single o_strobe pulse on change of i_toggle 
 module toggleDet(i_clk, i_toggle, o_strobe);
    input wire i_clk;
    input wire i_toggle;
@@ -358,8 +361,6 @@ module testmem(i_clk, i_addr, o_ack, i_we, i_data, i_re, o_data);
 	data2 <= 32'dx;
 
       // === acknowledge ===
-      // TBD omit WE in this application
-      //ack2 <= (we2 | re2) & ce2;
       ack2 <= re2 & ce2;
 
       // === BRAM output registers ===
@@ -374,7 +375,7 @@ endmodule
 
 // top level module, example implementation
 module top();   
-   wire 	    LED; // we hijack the PROG_DONE LED, which is a fairly common feature
+   wire 	    LED; // we hijack the PROG_DONE LED, which is a fairly common board feature
    wire 	    clk; // clock comes from the FPGA's own 65 MHz (-ish) ring oscillator. Please use a proper crystal-based clock in any "serious" design
    STARTUPE2 iStartupE2(.USRCCLKO(1'b0), .USRCCLKTS(1'b0), .USRDONEO(LED), .USRDONETS(1'b0), .CFGMCLK(clk));
    wire 	    CLK = clk;
@@ -388,13 +389,14 @@ module top();
    wire 	    evtToggleJtagClk;
    jtagByteIf if1(.i_dataTx(dataTx), .o_dataRx(dataRx), .o_tx(txStrobeJtagClk), .o_rx(rxStrobeJtagClk), .o_sync(syncStrobeJtagClk), .o_toggle(evtToggleJtagClk));
    
-   // === XCD to application clock domain ===
+   // === CDX to application clock domain ===
    wire 	    evt;
    toggleDet iTd1(.i_clk(CLK), .i_toggle(evtToggleJtagClk), .o_strobe(evt)); // evt changes late
    wire 	    rxStrobe 		= evt & rxStrobeJtagClk;
    wire 	    txStrobe 		= evt & txStrobeJtagClk;
    wire 	    syncStrobe	= evt & syncStrobeJtagClk;
-   
+
+   // === byte stream to bus interface ===
    wire [31:0] 	    busAddr;
    wire [31:0] 	    busData;
    wire 	    busWe;
@@ -414,10 +416,9 @@ module top();
       .o_busRe(busRe),
       .i_busData(busData_S2M),
       .i_busAck(busAck_S2M));
-
    
    // ===================================================================================
-   // Below: Example features for testing
+   // Below: Example features on the bus for testing
    // ===================================================================================
    
    // === demo slave 0 (RAM) ===
@@ -456,9 +457,9 @@ module top();
    end
 
    // === demo slave 3 (32 bit reg) ===
-   // write sets number of read clock cycles (0:force timeout)
-   // read delays for the programmed number of cycles
-   // read returns the programmed number of cycles
+   // - write sets number of read clock cycles (0:force timeout)
+   // - read delays for the programmed number of cycles
+   // - read returns the programmed number of cycles
    reg [31:0] 	       R2a = 32'd0;
    reg [31:0] 	       R2b = 32'd0;
    reg 		       R2_ack = 1'b0;
