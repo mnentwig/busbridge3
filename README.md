@@ -37,8 +37,8 @@ The design requires one BSCANE2 instantiation (of which there are four in total 
 # But it doesn't work!
 * Is the FTDI chip already opened e.g. by Vivado?
 * Does the board support 30 MBit/s between FTDI chip and FPGA? For example, [this FTDI board](https://shop.trenz-electronic.de/en/Products/Trenz-Electronic/Open-Hardware/Xmod-FTDI-JTAG-Adapter/) is limited to 15 MBit/s, most likely because of the CPLD
-* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code works on [CMOD A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
-* Electrical problems (USB cable, power supply, microcracks in PCB traces are not unheard of.
+* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [CMOD A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
+* Electrical problems (USB cable, power supply, microcracks in PCB traces, ...) are not unheard of.
 
 # But the example design has no clock input!?
 The example design runs from the FPGA's on-board ring oscillator (~65 MHz) to make it portable, without knowing the board-specific LOCation of the clock pin. DO use a proper crystal-based clock in any "serious" design.
