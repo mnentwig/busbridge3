@@ -76,7 +76,7 @@ The crossing is unusual: no synchronizer is used as a conscious design decision.
 If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. Adding a synchronizer would cut heavily into the readback timing budget, providing no actual advantage.
 It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs if there is enough time.
 
-Crossings are implemented using an event parallel to data that is toggled one cycle late.
+Crossings are implemented using a toggle event in parallel to data that causes data to be sampled one cycle after a detected change.
 
 # Navigating the project
 There are three folders:
@@ -86,4 +86,10 @@ There are three folders:
 
 After cloning from git, first build the RTL project in Vivado for the correct FPGA (default is Artix 7 35 cpg236). Then build and run busmasterSw/busmasterSw.sln. It will upload the bitstream from the RTL folder.
 
-If successful, the PROG_DONE LED will cycle once per second.
+If successful, the PROG_DONE LED will change about once per second (slightly slower), as long as the software is running (controlled by software via bit 0 of the example design's register 0x12345678)
+
+# Slowing down JTAG
+Uncomment this line (note, the effective division ratio of the FTDI hardware is clkDiv+1)
+```C#
+//clkDiv = 10; Console.WriteLine("DEBUG: clkDiv="+clkDiv);
+```
