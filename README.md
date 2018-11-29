@@ -17,7 +17,7 @@ Most Xilinx-boards support FTDI-based JTAG in a [standard configuration](https:/
 If a conventional UART will do (use FTDI DLL commands beyond 900 kBaud, not e.g. Windows standard serial port), the answer is clearly NO. Performance is bought by complexity and architectural constraints. Most importantly, the RTL implementation must provide readback data in time, where a UART will simply wait.
 
 # High-level overview
-Busbridge3 provides a basic bus interface with address lines, in-/out data, write/read enable and acknowledge for reads. The architecture is flat 32 bit. There are no specific 8-bit legacy features like byte masking, but data widths of 8/16/24/32 bits and arbitrary address increments (0, 1, 2, 3, 4, ...) are supported without no loss of throughput.
+Busbridge3 provides a basic bus interface with address lines, in-/out data, write/read enable and acknowledge for reads. The architecture is flat 32 bit. There are no specific 8-bit legacy features like byte masking, but data widths of 8/16/24/32 bits and arbitrary address increments (0, 1, 2, 3, 4, ...) are supported without loss of throughput.
 
 On the software side, transactions are collected and executed in bulk on demand. For example, many scattered memory writes and reads can be collected to be sent over a single USB frame. The API functions for memory reads return a "handle" to retrieve the data after execution.
 
