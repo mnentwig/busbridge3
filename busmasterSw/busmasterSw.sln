@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2048
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "busmasterSw", "busmasterSw.csproj", "{C83302C7-29CA-448E-9BEA-E579CBBAD39E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "busBridge3", "..\busBridge3\busBridge3.csproj", "{A593180C-6CE0-4648-9213-298FC7E1D6DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C83302C7-29CA-448E-9BEA-E579CBBAD39E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C83302C7-29CA-448E-9BEA-E579CBBAD39E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C83302C7-29CA-448E-9BEA-E579CBBAD39E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C83302C7-29CA-448E-9BEA-E579CBBAD39E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A593180C-6CE0-4648-9213-298FC7E1D6DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A593180C-6CE0-4648-9213-298FC7E1D6DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A593180C-6CE0-4648-9213-298FC7E1D6DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A593180C-6CE0-4648-9213-298FC7E1D6DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {06E8D29B-1B4C-4796-916D-61811EA014F3}
+	EndGlobalSection
+EndGlobal
