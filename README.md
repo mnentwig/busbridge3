@@ -19,6 +19,13 @@ Compared to a UART, the MPSSE-based approach achieves +5x throughput (approachin
 # Do I need it and why not
 If a conventional UART will do (use FTDI DLL commands beyond 900 kBaud, not e.g. Windows standard serial port), the answer is clearly NO. Performance is bought by complexity and architectural constraints. Most importantly, the RTL implementation must provide readback data in time, where a UART will simply wait.
 
+# High-level overview
+Busbridge3 provides a basic bus interface with address lines, in-/out data, write/read enable and acknowledge for reads. The architecture is flat 32 bit. There are no specific 8-bit legacy features like byte masking, but data widths of 8/16/24/32 bits and arbitrary address increments (0, 1, 2, 3, 4, ...) are supported without no loss of throughput.
+
+On the software side, transactions are collected and executed in bulk on demand. For example, many scattered memory writes and reads can be collected to be sent over a single USB frame. The API functions for memory reads return a "handle" to retrieve the data after execution.
+
+The user RTL code must be designed to provide (and acknowledge) readback data in time to be returned with the next JTAG byte. Given the relatively low data rate, this can usually be guaranteed-by-design in the user RTL. Optionally, application code can query the remaining number of clock cycles for past reads, and re-schedule them if out of margin (if reads are free of side effects and read timeouts are a rare but not impossible event)
+
 # What licenses do I need
 * Vivado webpack (no cost)
 * Visual studio for compilation. A free .NET environment e.g. [sharpDevelop](https://sourceforge.net/projects/sharpdevelop/) should work but is untested
@@ -53,18 +60,18 @@ Because it's as fast as it goes, using only the standard FTDI/JTAG interface (wh
 
 There are a few annoying details that were worked around without losing clock cycles, like splitting off the 8th bit for JTAG state transitions.  
 
-On the bright side: for bitstream upload only, most of the C# code is not needed.
+On the bright side: Bitstream upload alone does not need most of the C# code.
 
-# But what about the rated 480 MBit/s?
-Check the parallel mode of the FTDI chip on both parallel devices (MPSSE is, after all, still serial)
+# Shouldn't I get 480 MBit/s?
+Check the *parallel* mode of the FTDI chip on two devices simultaneously (MPSSE is, after all, still serial)
 
-# The clock domain crossing gives a warning
+# In Vivado, the clock domain crossing gives a (methodology) warning
+One of those "annoying" details... it's for a reason.
+
 There are two clock domains:
 * The JTAG port (driven by TCK from the FTDI chip)
 * The application clock domain at a "higher" frequency (if in doubt, increase the FTDI clock divider to slow things down on the JTAG side)
-The clock domain crossing is unusual in a sense that no synchronizer is used as a design decision (if return data would arrive so late as to cause metastability, it is invalid in any case. The downstream logic is "robust").
-It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs. 
-
-The strategy is simply that the application is required to provide return data in time, and adding a synchronizer at the (slow) JTAG frequency would cut into that timing budget.
+The clock domain crossing is unusual in a sense that no synchronizer is used as a design decision: If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. Adding a synchronizer would cut heavily into the readback timing budget, providing no actual advantage.
+It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs if there is enough time.
 
 Crossings are implemented using an event parallel to data that is toggled one cycle late.
