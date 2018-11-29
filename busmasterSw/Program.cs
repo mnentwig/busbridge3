@@ -58,20 +58,23 @@ class Program {
         //clkDiv = 10; Console.WriteLine("DEBUG: clkDiv="+clkDiv);
         ftdi_jtag jtag = new ftdi_jtag(io,clkDiv: clkDiv);
 
-        jtag.state_testLogicReset();
-        jtag.state_shiftIr();
-        byte[] bufa = new byte[] { 0x09 };
-        jtag.rwNBits(6,bufa,false);
-
+        byte[] bufa = null;
 #if true
         // === testcase for JTAG read splitting, where the final bit needs a separate command to set TMS ===
+        // see bb3_lvl2_io.cs for the relevant code
         // Repeat cycling through the JTAG state machine and read IDCODE. At FTDI driver level, this is fairly complex 
         // since the final bit with TMS = 1 needs to be split off into a separate command, returning a separate byte
+        jtag.state_testLogicReset();
+        jtag.state_shiftIr();
+        // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
+        bufa = new byte[] { /* opcode for IDCODE */0x09 };
+        jtag.rwNBits(6,bufa,false); // 6-bit opcode length
+
+        // note: repeated reads don't change the IDCODE opcode - above command is needed only once
         int nRepRead = 20;
         for(int nBits = 25;nBits <= 32;++nBits) { // exercise all combinations that return four bytes (different command patterns at FTDI opcode level)
             for(int ix = 0;ix < nRepRead;++ix) {
                 // === get IDCODE ===
-                // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
                 bufa = new byte[4];
                 jtag.state_shiftDr();
                 jtag.rwNBits(nBits,bufa,true);
@@ -86,8 +89,13 @@ class Program {
         }
 #endif
 
-        // === get IDCODE ===
+        // === get IDCODE (independently of above testcase) ===
+        jtag.state_testLogicReset();
+        jtag.state_shiftIr();
         // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
+        bufa = new byte[] { /* opcode for IDCODE */0x09 };
+        jtag.rwNBits(6,bufa,false); // 6-bit opcode length
+
         bufa = new byte[4];
         jtag.state_shiftDr();
         jtag.rwNBits(32,bufa,true);
