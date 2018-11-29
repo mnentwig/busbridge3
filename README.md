@@ -6,10 +6,8 @@ Xilinx 7-series FTDI-FPGA interface through JTAG with 125 us roundtrip latency.
 * Xilinx 7-series (Artix). Conceptually proven also on 6-series (Spartan)
 
 # Purpose
-Interfacing of PC to FPGA device with
-* minimal latency
-* high throughput
-* bitstream uploader (can be used independently)
+* Interfacing of PC to FPGA device with minimal latency and high throughput far beyond UART mode
+* Includes bitstream uploader (which can be also used standalone)
 
 Most Xilinx-boards support FTDI-based JTAG in a [standard configuration](https://www.ftdichip.com/Support/Documents/AppNotes/AN_129_FTDI_Hi_Speed_USB_To_JTAG_Example.pdf) with correct pinout for using [MPSSE-mode](https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf). 
 
