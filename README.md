@@ -77,3 +77,13 @@ If return data arrives so late as to cause metastability, it is invalid in any c
 It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs if there is enough time.
 
 Crossings are implemented using an event parallel to data that is toggled one cycle late.
+
+# Navigating the project
+There are three folders:
+* busbridge3_RTL: Verilog code resides here (busBridge3_RTL.srcs\sources_1\top.v)
+* busbridge3: C# code for the driver DLL (possibly import only the release-mode DLL into an own project)
+* busmasterSw: Example project and bitstream uploader
+
+After cloning from git, first build the RTL project in Vivado for the correct FPGA (default is Artix 7 35 cpg236). Then build and run busmasterSw/busmasterSw.sln. It will upload the bitstream from the RTL folder.
+
+If successful, the PROG_DONE LED will cycle once per second.
