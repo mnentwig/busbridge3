@@ -30,7 +30,9 @@ If a conventional UART will do (use FTDI DLL commands beyond 900 kBaud, not e.g.
 A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
 
 # How much space does it need
-After stripping off example features (e.g. BRAM), the required resources are minimal, comparable to a UART. The design requires one BSCANE2 instantiation (of which there are four in total - in case of conflicts, change the USER ID both in SW and RTL as needed)
+After stripping off example features (e.g. BRAM), the required resources are minimal, comparable to a UART. 
+
+The design requires one BSCANE2 instantiation (of which there are four in total - in case of conflicts, change the USER ID both in SW and RTL as needed)
 
 # But it doesn't work!
 * Is the FTDI chip already opened e.g. by Vivado?
@@ -49,7 +51,7 @@ If "coexistence" can't be avoided in development, connect another FPGA board thr
 # But... why does this need to be so absurdly complex?
 Because it's as fast as it goes, using only the standard FTDI/JTAG interface (which may be considered "smallest common denominator" among boards / modules). 
 
-There are a few annoying details that had to be worked around, like splitting off the 8th bit for JTAG state transitions.  
+There are a few annoying details that were worked around without losing clock cycles, like splitting off the 8th bit for JTAG state transitions.  
 
 On the bright side: for bitstream upload only, most of the C# code is not needed.
 
