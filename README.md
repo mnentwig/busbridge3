@@ -70,7 +70,10 @@ One of those "annoying" details... it's for a reason.
 There are two clock domains:
 * The JTAG port (driven by TCK from the FTDI chip)
 * The application clock domain at a "higher" frequency (if in doubt, increase the FTDI clock divider to slow things down on the JTAG side)
-The clock domain crossing is unusual in a sense that no synchronizer is used as a design decision: If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. Adding a synchronizer would cut heavily into the readback timing budget, providing no actual advantage.
+
+The crossing is unusual: no synchronizer is used as a conscious design decision. 
+
+If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. Adding a synchronizer would cut heavily into the readback timing budget, providing no actual advantage.
 It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs if there is enough time.
 
 Crossings are implemented using an event parallel to data that is toggled one cycle late.
