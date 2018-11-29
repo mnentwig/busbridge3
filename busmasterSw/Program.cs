@@ -63,6 +63,29 @@ class Program {
         byte[] bufa = new byte[] { 0x09 };
         jtag.rwNBits(6,bufa,false);
 
+#if true
+        // === testcase for JTAG read splitting, where the final bit needs a separate command to set TMS ===
+        // Repeat cycling through the JTAG state machine and read IDCODE. At FTDI driver level, this is fairly complex 
+        // since the final bit with TMS = 1 needs to be split off into a separate command, returning a separate byte
+        int nRepRead = 20;
+        for(int nBits = 25;nBits <= 32;++nBits) { // exercise all combinations that return four bytes (different command patterns at FTDI opcode level)
+            for(int ix = 0;ix < nRepRead;++ix) {
+                // === get IDCODE ===
+                // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
+                bufa = new byte[4];
+                jtag.state_shiftDr();
+                jtag.rwNBits(nBits,bufa,true);
+            }
+            bufa = jtag.getReadCopy(jtag.exec());
+            if(bufa.Length != nRepRead * 4)
+                throw new Exception();
+            for(int ix = 1;ix < nRepRead;++ix) {
+                if((bufa[4*ix-4] != bufa[4*ix]) || (bufa[4*ix-4+1] != bufa[4*ix+1]) || (bufa[4*ix-4+2] != bufa[4*ix+2]) || (bufa[4*ix-4+3] != bufa[4*ix+3]))
+                    throw new Exception();
+            }
+        }
+#endif
+
         // === get IDCODE ===
         // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
         bufa = new byte[4];
@@ -95,6 +118,8 @@ class Program {
         uploadBitstream(jtag,bitstream);
         Console.WriteLine("bitstream upload: "+sw2.ElapsedMilliseconds+" ms");
 #if false
+        // === exercises the USERx opcode ===
+        // use this as template to work with user circuitry that is directly attached to the BSCANE2 component (without using the "higher" busbridge layers)
         byte[] tmp = new byte[32];
         for(int ix = 0;ix < tmp.Length;++ix)
             tmp[ix] = (byte)ix;
@@ -110,7 +135,6 @@ class Program {
         foreach(byte b in bRead)
             Console.WriteLine(String.Format("{0:X2}",b));
 #endif
-
 
         // === open memory interface ===
         memIf_cl m = new memIf_cl(jtag);
