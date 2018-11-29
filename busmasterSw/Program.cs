@@ -255,6 +255,7 @@ class Program {
         jtag.state_shiftIr();
         jtag.rwNBits(6,b1,false);
 
+        // === send the byte-reversed bitstream ===
         jtag.state_shiftDr();
         jtag.rwNBits(buf.Length*8,buf,false);
 
