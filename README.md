@@ -86,4 +86,10 @@ There are three folders:
 
 After cloning from git, first build the RTL project in Vivado for the correct FPGA (default is Artix 7 35 cpg236). Then build and run busmasterSw/busmasterSw.sln. It will upload the bitstream from the RTL folder.
 
-If successful, the PROG_DONE LED will cycle once per second.
+If successful, the PROG_DONE LED will change about once per second (slightly slower), as long as the software is running (controlled by software via bit 0 of the example design's register 0x12345678)
+
+# Slowing down JTAG
+Uncomment this line (note, the effective division ratio of the FTDI hardware is clkDiv+1)
+```C#
+//clkDiv = 10; Console.WriteLine("DEBUG: clkDiv="+clkDiv);
+```
