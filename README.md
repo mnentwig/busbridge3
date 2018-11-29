@@ -21,9 +21,9 @@ If a conventional UART will do (use FTDI DLL commands beyond 900 kBaud, not e.g.
 
 # What licenses do I need
 * Vivado webpack (no cost)
-* Visual studio for compilation. A free .NET environment e.g. (sharpDevelop)[https://sourceforge.net/projects/sharpdevelop/] should work but is untested
-* FTDI's managed .NET wrapper which is (provided by FTDI)[https://www.ftdichip.com/Support/SoftwareExamples/CodeExamples/CSharp.htm] as a "free download" (included by the terms of its own license)
-* (FTDI's D2XX drivers)[https://www.ftdichip.com/Drivers/D2XX.htm] installed on the machine
+* Visual studio for compilation. A free .NET environment e.g. [sharpDevelop](https://sourceforge.net/projects/sharpdevelop/) should work but is untested
+* FTDI's managed .NET wrapper which is [provided by FTDI](https://www.ftdichip.com/Support/SoftwareExamples/CodeExamples/CSharp.htm) as a "free download" (included by the terms of its own license)
+* [FTDI's D2XX drivers](https://www.ftdichip.com/Drivers/D2XX.htm) installed on the machine
 * The interface does NOT require a Digilent JTAG license, as it is completely independent (but it does not interfere either)
 
 # Bitstream uploader
@@ -34,8 +34,8 @@ After stripping off example features (e.g. BRAM), the required resources are min
 
 # But it doesn't work!
 * Is the FTDI chip already opened e.g. by Vivado?
-* Does the board support 30 MBit/s between FTDI chip and FPGA? For example, (this FTDI board)[https://shop.trenz-electronic.de/en/Products/Trenz-Electronic/Open-Hardware/Xmod-FTDI-JTAG-Adapter/] is limited to 15 MBit/s, most likely because of the CPLD
-* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code works on (CMOD A7)[https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/], which requires one GPO-bit to enable JTAG buffers.
+* Does the board support 30 MBit/s between FTDI chip and FPGA? For example, [this FTDI board](https://shop.trenz-electronic.de/en/Products/Trenz-Electronic/Open-Hardware/Xmod-FTDI-JTAG-Adapter/) is limited to 15 MBit/s, most likely because of the CPLD
+* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code works on [CMOD A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
 * Electrical problems (USB cable, power supply, microcracks in PCB traces are not unheard of.
 
 # But the example design has no clock input!?
@@ -46,8 +46,10 @@ You can't. The FTDI logical device for JTAG cannot be shared.
 
 If "coexistence" can't be avoided in development, connect another FPGA board through spare GPIOs and instantiate the BSCANE2 on the 2nd board (obviously, not supporting bitstream upload).
 
-# Why does this need to be so absurdly complex?
-Because it's as fast as it goes, using only the standard FTDI/JTAG interface (which may be considered "smallest common denominator"). There are a few annoying details that had to be worked around, like splitting off the 8th bit for JTAG state transitions.  
+# But... why does this need to be so absurdly complex?
+Because it's as fast as it goes, using only the standard FTDI/JTAG interface (which may be considered "smallest common denominator" among boards / modules). 
+
+There are a few annoying details that had to be worked around, like splitting off the 8th bit for JTAG state transitions.  
 
 On the bright side: for bitstream upload only, most of the C# code is not needed.
 
@@ -59,4 +61,8 @@ There are two clock domains:
 * The JTAG port (driven by TCK from the FTDI chip)
 * The application clock domain at a "higher" frequency (if in doubt, increase the FTDI clock divider to slow things down on the JTAG side)
 The clock domain crossing is unusual in a sense that no synchronizer is used as a design decision (if return data would arrive so late as to cause metastability, it is invalid in any case. The downstream logic is "robust").
-It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs. The strategy is simply that the application is required to provide return data in time, and adding a synchronizer at the (slow) JTAG frequency would cut into that timing budget.
+It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs. 
+
+The strategy is simply that the application is required to provide return data in time, and adding a synchronizer at the (slow) JTAG frequency would cut into that timing budget.
+
+Crossings are implemented using an event parallel to data that is toggled one cycle late.
