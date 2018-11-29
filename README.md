@@ -21,7 +21,9 @@ Busbridge3 provides a basic bus interface with address lines, in-/out data, writ
 
 On the software side, transactions are collected and executed in bulk on demand. For example, many scattered memory writes and reads can be collected to be sent over a single USB frame. The API functions for memory reads return a "handle" to retrieve the data after execution.
 
-The user RTL code must be designed to provide (and acknowledge) readback data in time to be returned with the next JTAG byte. Given the relatively low data rate, this can usually be guaranteed-by-design in the user RTL. Optionally, application code can query the remaining number of clock cycles for past reads, and re-schedule them if out of margin (if reads are free of side effects and read timeouts are a rare but not impossible event)
+The user RTL code must be designed to provide (and acknowledge) readback data in time to be returned with the next JTAG byte. Given the relatively low data rate, this can usually be guaranteed-by-design in the user RTL. 
+
+Optionally, application code can query the remaining number of clock cycles for past reads, and re-schedule them if out of margin (practical if reads are free of side effects and read timeouts are a rare but not impossible event)
 
 # What licenses do I need
 * Vivado webpack (no cost)
