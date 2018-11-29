@@ -42,4 +42,21 @@ After stripping off example features (e.g. BRAM), the required resources are min
 The example design runs from the FPGA's on-board ring oscillator (~65 MHz) to make it portable, without knowing the board-specific LOCation of the clock pin. DO use a proper crystal-based clock in any "serious" design.
 
 # How can I debug this with Xilinx tools (Microblaze, ILA)
-You can't. There is only one USB cable for JTAG. If "coexistence" can't be avoided in development, connect another FPGA board through spare GPIOs and instantiate the BSCANE2 on the 2nd board (obviously, bitstream upload cannot work in this case).
+You can't. The FTDI logical device for JTAG cannot be shared.
+
+If "coexistence" can't be avoided in development, connect another FPGA board through spare GPIOs and instantiate the BSCANE2 on the 2nd board (obviously, not supporting bitstream upload).
+
+# Why does this need to be so absurdly complex?
+Because it's as fast as it goes, using only the standard FTDI/JTAG interface (which may be considered "smallest common denominator"). There are a few annoying details that had to be worked around, like splitting off the 8th bit for JTAG state transitions.  
+
+On the bright side: for bitstream upload only, most of the C# code is not needed.
+
+# But what about the rated 480 MBit/s?
+Check the parallel mode of the FTDI chip on both parallel devices (MPSSE is, after all, still serial)
+
+# The clock domain crossing gives a warning
+There are two clock domains:
+* The JTAG port (driven by TCK from the FTDI chip)
+* The application clock domain at a "higher" frequency (if in doubt, increase the FTDI clock divider to slow things down on the JTAG side)
+The clock domain crossing is unusual in a sense that no synchronizer is used as a design decision (if return data would arrive so late as to cause metastability, it is invalid in any case. The downstream logic is "robust").
+It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs. The strategy is simply that the application is required to provide return data in time, and adding a synchronizer at the (slow) JTAG frequency would cut into that timing budget.
