@@ -80,9 +80,9 @@ Crossings are implemented using a toggle event in parallel to data that causes d
 
 # Navigating the project
 There are three folders:
-* busbridge3_RTL: Verilog code resides here (busBridge3_RTL.srcs\sources_1\top.v)
+* busbridge3_RTL: Verilog code resides here (busBridge3_RTL.srcs\sources_1\top.v). For an own design, modules other than "top()" could remain unchanged. 
 * busbridge3: C# code for the driver DLL (possibly import only the release-mode DLL into an own project)
-* busmasterSw: Example project and bitstream uploader
+* busmasterSw: Example project and bitstream uploader. Loosely speaking, consider this an example for copy-and-paste into own code.
 
 After cloning from git, first build the RTL project in Vivado for the correct FPGA (default is Artix 7 35 cpg236). Then build and run busmasterSw/busmasterSw.sln. It will upload the bitstream from the RTL folder.
 
