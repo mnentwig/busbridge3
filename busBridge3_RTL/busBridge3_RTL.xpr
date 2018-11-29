@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="38" Path="C:/temp/temptemp/busbridge3/busBridge3_RTL/busBridge3_RTL.xpr">
+<Project Version="7" Minor="38" Path="C:/temp/t3/busbridge3/busBridge3_RTL/busBridge3_RTL.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="37dc1b0bf1f24bd4abf9aec7cf9d25cd"/>

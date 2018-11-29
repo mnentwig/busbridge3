@@ -26,8 +26,8 @@ namespace busbridge3 {
             buf = new byte[]{
                 0x8A, // disable clk divide by 5
                 0x97, // disable adaptive clocking
-                0x8D, //, // disable 3-phase clocking
-                0xAB // invalid command, see http://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf page 17
+                0x8D, // disable 3-phase clocking
+                0xAB  // invalid command, see http://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf page 17
             };
             this.io.wr(buf, buf.Length, nRead :2);
             this.checkStartupReadback(this.io.exec());

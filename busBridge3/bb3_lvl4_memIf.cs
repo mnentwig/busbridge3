@@ -54,10 +54,10 @@ namespace busbridge3 {
 
             // === USERx instruction ===
             this.buf1[0] = this.userOpcode;
-            jtag.state_shiftIr();
-            jtag.rwNBits(6, this.buf1, false);
-            jtag.state_shiftDr();
-            jtag.rwNBits(this.nBuf*8, this.buf, this.readFlag);
+            this.jtag.state_shiftIr();
+            this.jtag.rwNBits(6, this.buf1, false);
+            this.jtag.state_shiftDr();
+            this.jtag.rwNBits(this.nBuf*8, this.buf, this.readFlag);
             this.nBuf = 0;
             this.readFlag = false;
             this.jtag.exec();

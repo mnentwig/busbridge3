@@ -41,10 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="bb2_lvl1_io.cs" />
-    <Compile Include="bb2_lvl2_io.cs" />
-    <Compile Include="bb2_lvl3_jtag.cs" />
-    <Compile Include="bb2_lvl4_memIf.cs" />
+    <Compile Include="bb3_lvl1_io.cs" />
+    <Compile Include="bb3_lvl2_io.cs" />
+    <Compile Include="bb3_lvl3_jtag.cs" />
+    <Compile Include="bb3_lvl4_memIf.cs" />
     <Compile Include="FTD2XX_NET.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
