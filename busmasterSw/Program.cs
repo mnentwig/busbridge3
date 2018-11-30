@@ -80,11 +80,10 @@ class Program {
                 jtag.rwNBits(nBits,bufa,true);
             }
             bufa = jtag.getReadCopy(jtag.exec());
-            if(bufa.Length != nRepRead * 4)
-                throw new Exception();
+            if(bufa.Length != nRepRead * 4) throw new Exception("unexpected number of returned readback bytes");
             for(int ix = 1;ix < nRepRead;++ix) {
-                if((bufa[4*ix-4] != bufa[4*ix]) || (bufa[4*ix-4+1] != bufa[4*ix+1]) || (bufa[4*ix-4+2] != bufa[4*ix+2]) || (bufa[4*ix-4+3] != bufa[4*ix+3]))
-                    throw new Exception();
+                if((bufa[0] != bufa[4*ix]) || (bufa[1] != bufa[4*ix+1]) || (bufa[2] != bufa[4*ix+2]) || (bufa[3] != bufa[4*ix+3]))
+                    throw new Exception("expected to get repetitions of the same response");
             }
         }
 #endif
