@@ -73,7 +73,7 @@ There are two clock domains:
 
 The crossing is unusual: no synchronizer is used as a conscious design decision. 
 
-If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. Adding a synchronizer would cut heavily into the readback cycle count budget, providing no actual advantage.
+If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. Adding a synchronizer at the slow JTAG frequency would cut heavily into the readback cycle count budget, providing no actual advantage.
 It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs if there is enough time.
 
 Crossings are implemented using a toggle event in parallel to data that causes data to be sampled one cycle after a detected change.
