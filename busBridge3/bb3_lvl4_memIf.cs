@@ -6,20 +6,30 @@ using FTD2XX_busbridge3_NET;
 namespace busbridge3 {
     public class memIf_cl {
         private ftdi_jtag jtag;
+        /// <summary>buffer for generated command / data stream</summary>
         private byte[] buf = new byte[256];
+        /// <summary>general-purpose buffer (reuse for GC avoidance)</summary>
         private byte[] buf1 = new byte[1];
+        /// <summary>general-purpose buffer (reuse for GC avoidance)</summary>
+        private UInt32[] buf1UInt32 = new UInt32[1];
+        /// <summary>number of bytes in buf</summary>
         private int nBuf = 0;
+        /// <summary>hardware state of address increment register</summary>
         private int addrInc = 1; // RTL default
+        /// <summary>hardware state of wordwidth register</summary>
         private int wordwidth = 4; // RTL default
+        /// <summary>hardware state of block length register</summary>
         private int nWords = 1; // RTL default
+        /// <summary>hardware state of address register</summary>
         private UInt32 addr = 0; // RTL default
+        /// <summary>JTAG opcode to enter USERx mode</summary>
         private byte userOpcode;
+        /// <summary>whether or not readback data from the FTDI chip should be recorded</summary>
         private bool readFlag = false;
         /// <summary>possible trailing response bytes overlapping the next command byte</summary>
         private int padTo = 0;
-        private UInt32[] buf1UInt32 = new UInt32[1];
 
-        // see busBridge2.v state machine states = command tokens
+        // see busBridge3.v state machine states = command tokens
         private enum cmd_e:byte {
             IDLE = 0,       // NOP. Do nothing, e.g. padding to flush return data
             ADDRINC = 1,    // set address increment state. Note: 0 is valid
@@ -28,9 +38,10 @@ namespace busbridge3 {
             ADDRWRITE = 4,  // set address then write packet
             WRITE = 5,      // write packet to next address (omit redundant address in message)
             ADDRREAD = 6,   // set address and read
-            READ = 7,        // read packet from next address (omit redundant address in message)
-            QUERYMARGIN = 8
+            READ = 7,       // read packet from next address (omit redundant address in message)
+            QUERYMARGIN = 8 // query and reset the timing margin register
         }
+
         public memIf_cl(ftdi_jtag jtag, int user = 1) {
             this.jtag = jtag;
             // JTAG instruction register opcodes for Xilinx BSCANE2 USER register
@@ -44,9 +55,7 @@ namespace busbridge3 {
             }
         }
 
-        /// <summary>
-        /// Perform all queued write/read operation through FTDI chip and JTAG.
-        /// </summary>
+        /// <summary>Perform all queued write/read operation through FTDI chip and JTAG</summary>
         public void exec() {
             for(int ix = this.nBuf; ix < this.padTo; ++ix)
                 this.feedUInt8((byte)cmd_e.IDLE);
@@ -63,9 +72,7 @@ namespace busbridge3 {
             this.jtag.exec();
         }
 
-        /// <summary>
-        /// check and possibly extend the internal write buffer to accomodate nBytes
-        /// </summary>
+        /// <summary>check and possibly extend the internal write buffer to accommodate nBytes</summary>
         /// <param name="nBytes">number of bytes to provide space for</param>
         private void provideBuf(int nBytes) {
             if(buf.Length-this.nBuf < nBytes) {
@@ -105,9 +112,7 @@ namespace busbridge3 {
             }
         }
 
-        /// <summary>
-        /// Sets number of words to transmit 
-        /// </summary>
+        /// <summary>Sets number of words to transmit</summary>
         /// <param name="nWords">number of words, comprising WORDWIDTH 8-bit bytes each</param>
         private void setNWords(int nWords) {
             if(this.nWords!= nWords) {
@@ -123,18 +128,14 @@ namespace busbridge3 {
             }
         }
 
-        /// <summary>
-        /// Push an 8-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder
-        /// </summary>
+        /// <summary>Push an 8-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder</summary>
         /// <param name="val">value to write</param>
         private void feedUInt8(byte val) {
             this.provideBuf(1);
             this.buf[this.nBuf++] = val;
         }
 
-        /// <summary>
-        /// Push a 16-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)
-        /// </summary>
+        /// <summary>Push a 16-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)</summary>
         /// <param name="val">value to write</param>
         private void feedUInt16(UInt16 val) {
             this.provideBuf(2);
@@ -142,9 +143,7 @@ namespace busbridge3 {
             this.buf[this.nBuf++] =                 (byte)((val >> 8) & 0xFF);
         }
 
-        /// <summary>
-        /// Push a 32-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)
-        /// </summary>
+        /// <summary>Push a 32-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)</summary>
         /// <param name="val">value to write</param>
         private void feedUInt32(UInt32 val) {
             this.provideBuf(4);
@@ -154,9 +153,7 @@ namespace busbridge3 {
             this.buf[this.nBuf++] =                 (byte)((val >> 24) & 0xFF);
         }
 
-        /// <summary>
-        /// Push a 32-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)
-        /// </summary>
+        /// <summary>Push a 32-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)</summary>
         /// <param name="val">value to write</param>
         private void feedInt32(Int32 val) {
             this.provideBuf(4);
@@ -166,9 +163,7 @@ namespace busbridge3 {
             this.buf[this.nBuf++] =                 (byte)((val >> 24) & 0xFF);
         }
 
-        /// <summary>
-        /// Helper function to set up a write transaction
-        /// </summary>
+        /// <summary>Helper function to set up a write transaction</summary>
         /// <param name="wordwidth">Use this wordwidth for transmission</param>
         /// <param name="addr">Transmit to this address</param>
         /// <param name="addrInc">Address increment per word</param>
@@ -196,9 +191,7 @@ namespace busbridge3 {
             }
         }
 
-        /// <summary>
-        /// 8-bit write
-        /// </summary>
+        /// <summary>8-bit write</summary>
         /// <param name="addr">destination address</param>
         /// <param name="data">data to write</param>
         /// <param name="offset">offset into data (default: 0)</param>
@@ -214,9 +207,7 @@ namespace busbridge3 {
                 this.feedUInt8(data[offset++]);
         }
 
-        /// <summary>
-        /// 16-bit write
-        /// </summary>
+        /// <summary>16-bit write</summary>
         /// <param name="addr">destination address</param>
         /// <param name="data">data to write</param>
         /// <param name="offset">offset into data (default: 0)</param>
@@ -237,9 +228,7 @@ namespace busbridge3 {
             this.write(addr, this.buf1UInt32, offset :0, n :1);
         }
 
-        /// <summary>
-        /// 32-bit write
-        /// </summary>
+        /// <summary>32-bit write (unsigned)</summary>
         /// <param name="addr">destination address</param>
         /// <param name="data">data to write</param>
         /// <param name="offset">offset into data (default: 0)</param>
@@ -253,9 +242,7 @@ namespace busbridge3 {
                 this.feedUInt32(data[offset++]);
         }
 
-        /// <summary>
-        /// 32-bit write
-        /// </summary>
+        /// <summary>32-bit write (signed)</summary>
         /// <param name="addr">destination address</param>
         /// <param name="data">data to write</param>
         /// <param name="offset">offset into data (default: 0)</param>
@@ -269,9 +256,7 @@ namespace busbridge3 {
                 this.feedInt32(data[offset++]);
         }
 
-        /// <summary>
-        /// Helper function to set up a read transaction
-        /// </summary>
+        /// <summary>Helper function to set up a read transaction</summary>
         /// <param name="wordwidth">Use this wordwidth for reception</param>
         /// <param name="addr">Read from this address</param>
         /// <param name="addrInc">Address increment per word</param>
@@ -299,6 +284,11 @@ namespace busbridge3 {
             }
         }
 
+        /// <summary>Queue a read operation for 32-bit words</summary>
+        /// <param name="addr">Address to read from</param>
+        /// <param name="nWords">number of consecutive words</param>
+        /// <param name="addrInc">address increment between words</param>
+        /// <returns>handle (offset) for getUInt32()</returns>
         public int readUInt32(UInt32 addr, int nWords = 1, int addrInc = 1) {
             this.readHeaderAdvanceAddress(wordwidth :4, addr :addr, addrInc :addrInc, nWords :nWords);
             const int off = 1; // hardware delay in bytes
@@ -311,6 +301,8 @@ namespace busbridge3 {
             return retVal;
         }
 
+        /// <summary>Returns the worst remaining number of clock cycles for any previous read, and resets the counter.</summary>
+        /// <returns>handle for getUInt16(). getUInt16(handle)==0 means at least one past read is invalid (timeout).</returns>
         public int queryMargin() {
             this.provideBuf(3);
             this.buf[this.nBuf++] = (byte)cmd_e.QUERYMARGIN;
@@ -325,6 +317,11 @@ namespace busbridge3 {
             return retVal;
         }
 
+        /// <summary>Queue a read operation for 16-bit words</summary>
+        /// <param name="addr">Address to read from</param>
+        /// <param name="nWords">number of consecutive words</param>
+        /// <param name="addrInc">address increment between words</param>
+        /// <returns>handle (offset) for getUInt16()</returns>
         public int readUInt16(UInt32 addr, int nWords = 1, int addrInc = 1) {
             this.readHeaderAdvanceAddress(wordwidth :2, addr :addr, addrInc :addrInc, nWords :nWords);
             const int off = 1; // hardware delay in bytes
@@ -337,6 +334,11 @@ namespace busbridge3 {
             return retVal;
         }
 
+        /// <summary>Queue a read operation for 8-bit words</summary>
+        /// <param name="addr">Address to read from</param>
+        /// <param name="nWords">number of consecutive words</param>
+        /// <param name="addrInc">address increment between words</param>
+        /// <returns>handle (offset) for getUInt8()</returns>
         public int readUInt8(UInt32 addr, int nWords = 1, int addrInc = 1) {
             this.readHeaderAdvanceAddress(wordwidth :1, addr :addr, addrInc :addrInc, nWords :nWords);
             int off = 1;
@@ -349,6 +351,9 @@ namespace busbridge3 {
             return retVal;
         }
 
+        /// <summary>Returns the result of an executed 32-bit read as UInt</summary>
+        /// <param name="offset">handle obtained when read was queued</param>
+        /// <returns>readback result</returns>
         public UInt32 getUInt32(int offset) {
             UInt32 retVal;
             retVal = (UInt32)this.jtag.io.readData[offset++];
@@ -358,6 +363,10 @@ namespace busbridge3 {
             return retVal;
         }
 
+        /// <summary>Returns the result of an executed 32-bit block read as UInt</summary>
+        /// <param name="offset">handle obtained when read was queued</param>
+        /// <param name="num">number of words (corresponding to the nWords argument when read was queued)</param>
+        /// <returns>readback result</returns>
         public UInt32[] getUInt32(int offset, int num) {
             UInt32[] r = new UInt32[num];
             for(int ix = 0; ix < num; ++ix) {
@@ -367,6 +376,9 @@ namespace busbridge3 {
             return r;
         }
 
+        /// <summary>Returns the result of an executed 16-bit block read as UInt</summary>
+        /// <param name="offset">handle obtained when read was queued</param>
+        /// <returns>readback result</returns>
         public UInt16 getUInt16(int offset) {
             UInt16 retVal;
             retVal = (UInt16)this.jtag.io.readData[offset++];
@@ -374,6 +386,10 @@ namespace busbridge3 {
             return retVal;
         }
 
+        /// <summary>Returns the result of an executed 16-bit block read as UInt16</summary>
+        /// <param name="offset">handle obtained when read was queued</param>
+        /// <param name="num">number of words (corresponding to the nWords argument when read was queued)</param>
+        /// <returns>readback result</returns>
         public UInt16[] getUInt16(int offset, int num) {
             UInt16[] r = new UInt16[num];
             for(int ix = 0; ix < num; ++ix) {
@@ -383,10 +399,16 @@ namespace busbridge3 {
             return r;
         }
 
+        /// <summary>Returns the result of an executed 8-bit read as byte</summary>
+        /// <param name="offset">handle obtained when read was queued</param>
+        /// <returns>readback result</returns>
         public byte getUInt8(int offset) {
             return this.jtag.io.readData[offset];
         }
 
+        /// <summary>Returns the result of an executed 8-bit block read as byte</summary>
+        /// <param name="offset">handle obtained when read was queued</param>
+        /// <returns>readback result</returns>
         public byte[] getUInt8(int offset, int num) {
             byte[] retVal = new byte[num];
             for(int ix = 0; ix < num; ++ix)
@@ -394,8 +416,9 @@ namespace busbridge3 {
             return retVal;
         }
 
+        // =================================
         // === memtest utility functions ===
-
+        // =================================
         static Random RNG = new Random(Seed :0);
         static void FisherYatesShuffle<T>(IList<T> list) {
             int n = list.Count;
