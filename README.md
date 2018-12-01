@@ -32,6 +32,11 @@ Optionally, application code can query the remaining number of clock cycles for 
 * [FTDI's D2XX drivers](https://www.ftdichip.com/Drivers/D2XX.htm) installed on the machine
 * The interface does NOT require a Digilent JTAG license, as it is completely independent (but it does not interfere either)
 
+### Versions
+* Visual studio: 2017 (community edition will do)
+* alternative to VS: [sharpDevelop 5.1](https://sourceforge.net/projects/sharpdevelop/)
+* Vivado: 2018.1 
+
 ### Bitstream uploader
 A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
 
@@ -79,10 +84,11 @@ It is at the user's discretion to use appropriate constraints, exceptions, or in
 Crossings are implemented using a toggle event in parallel to data that causes data to be sampled one cycle after a detected change.
 
 ### Navigating the project
-There are three folders:
+There are three main folders:
 * busbridge3_RTL: Verilog code resides here (busBridge3_RTL.srcs\sources_1\top.v). For an own design, modules other than "top()" could remain unchanged. 
 * busbridge3: C# code for the driver DLL (possibly import only the release-mode DLL into an own project)
 * busmasterSw: Example project and bitstream uploader. Loosely speaking, consider this an example for copy-and-paste into own code.
+* sharpDevelop_build: Optional project for sharpDevelop 5.1 (as simple as it gets - no DLL, everything is compiled into the .exe). To recreate the project, set up a new console project, then drag in all .cs files as links.
 
 After cloning from git, first build the RTL project in Vivado for the correct FPGA (default is Artix 7 35 cpg236). Then build and run busmasterSw/busmasterSw.sln. It will upload the bitstream from the RTL folder.
 
