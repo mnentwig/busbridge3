@@ -2,7 +2,7 @@
   
 // Provides byte-level interface to the USERx opcode of the FPGA's JTAG port
 //_o_toggle: Change signals an event
-// o_sync: is asserted when the JTAG USERx opcode is re-entered at JTAG level ("new transaction", e.g. reset the parsing logic)
+// o_sync: is asserted when the JTAG USERx opcode is re-entered at JTAG level ("new transaction", e.g. reset the bytestream parsing logic)
 //   See bb3_lvl4_memIf.cs e.g. "this.buf1[0] = this.userOpcode;" for an example that raises o_sync
 //   Alternatively, the application may choose to set JTAG IR to USERx, then enter DR state and never leave it again. 
 //   In this case, o_sync is asserted only once at startup. 
