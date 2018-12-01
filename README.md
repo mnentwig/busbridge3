@@ -35,7 +35,8 @@ Optionally, application code can query the remaining number of clock cycles for 
 ### Versions
 * Visual studio: 2017 (community edition will do)
 * alternative to VS: [sharpDevelop 5.1](https://sourceforge.net/projects/sharpdevelop/)
-* Vivado: 2018.1 
+* Vivado: 2018.1
+* Default FPGA board: CMOD A7-35T. Review the Vivado project (at least change the device) for other boards. Note, the project does not require any LOC-constrained pins.
 
 ### Bitstream uploader
 A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
@@ -48,7 +49,8 @@ The design requires one BSCANE2 instantiation (of which there are four in total 
 ### But it doesn't work!
 * Is the FTDI chip already opened e.g. by Vivado?
 * Does the board support 30 MBit/s between FTDI chip and FPGA? For example, [this FTDI board](https://shop.trenz-electronic.de/en/Products/Trenz-Electronic/Open-Hardware/Xmod-FTDI-JTAG-Adapter/) is limited to 15 MBit/s, most likely because of the CPLD
-* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [CMOD A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
+* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [
+A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
 * Electrical problems (USB cable, power supply, microcracks in PCB traces, ...) are not unheard of.
 
 ### But the example design has no clock input!?
