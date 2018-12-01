@@ -357,9 +357,9 @@ namespace busbridge3 {
         public UInt32 getUInt32(int offset) {
             UInt32 retVal;
             retVal = (UInt32)this.jtag.io.readData[offset++];
-            retVal |= (UInt32)(this.jtag.io.readData[offset++] << 8);
-            retVal |= (UInt32)(this.jtag.io.readData[offset++] << 16);
-            retVal |= (UInt32)(this.jtag.io.readData[offset++] << 24);
+            retVal |= (UInt32)this.jtag.io.readData[offset++] << 8;
+            retVal |= (UInt32)this.jtag.io.readData[offset++] << 16;
+            retVal |= (UInt32)this.jtag.io.readData[offset++] << 24;
             return retVal;
         }
 
@@ -382,7 +382,7 @@ namespace busbridge3 {
         public UInt16 getUInt16(int offset) {
             UInt16 retVal;
             retVal = (UInt16)this.jtag.io.readData[offset++];
-            retVal |= (UInt16)(this.jtag.io.readData[offset++] << 8);
+            retVal |= (UInt16)((UInt16)(this.jtag.io.readData[offset++]) << 8); // cast is necessary for sharpDevelop
             return retVal;
         }
 
