@@ -77,8 +77,8 @@ The design requires one BSCANE2 instantiation (of which there are four in total 
 ### But it doesn't work!
 * Is the FTDI chip already opened e.g. by Vivado?
 * Does the board support 30 MBit/s between FTDI chip and FPGA? For example, [this FTDI board](https://shop.trenz-electronic.de/en/Products/Trenz-Electronic/Open-Hardware/Xmod-FTDI-JTAG-Adapter/) is limited to 15 MBit/s, most likely because of the CPLD
-* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [
-A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
+* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [CMOD
+ A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
 * Is another FTDI device present? The example code searches for "DIGILENT ADEPT USB DEVICE A" in the FTDI chip's description string (EEPROM). For non-Digilent boards, the string should be edited. Please note, the letter "A" or "B" ("C", "D" for FT4232) is appended by the FTDI chip hardware.
 * Electrical problems (USB cable, power supply, microcracks in PCB traces, ...) are not unheard of.
 
