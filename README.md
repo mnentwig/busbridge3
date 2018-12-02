@@ -126,6 +126,3 @@ Bitstream upload will take longer, and reported read margins should increase.
 
 ### Shouldn't I get 480 MBit/s?
 Check the *parallel* mode of the FTDI chip on two devices simultaneously (MPSSE is, after all, still serial)
-
-### FT4232H ports C/D don't work!
-There are only two MPSSE engines on the 4232H chip (A/B).
