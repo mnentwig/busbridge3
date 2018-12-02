@@ -38,10 +38,16 @@ Connect a [CMOD A7/35T](https://store.digilentinc.com/cmod-a7-breadboardable-art
 ##### Compile: Visual Studio (Microsoft)
 * In _Visual Studio 2017_ e.g. Community Edition, open _busmasterSw/busmasterSw.sln_
 * Press F5 to build and run (any combination of Debug/Release/Any CPU/x86/x64 should work)
+* Note: The project bundles most of the code into a separate DLL for reuse, but this is not necessary (may move all .cs files into the "Console Application" project and delete the DLL project from the solution).
 
 ##### Compile: sharpDevelop (GPL)
 * In [sharpDevelop 5.1](https://sourceforge.net/projects/sharpdevelop/), open _sharpDevelopBuild/sharpDevelopBuild.sln_
 * Press F5 to build and run
+
+##### Compile: other build tools (e.g. older Visual Studio)
+* Create a new Console Application project
+* Import all .cs files from _busBridge3_ and _busmasterSw_
+* Note: This project does not use a separate DLL
 
 ##### Validating functionality
 Running the C# code shows a console window, and the yellow PROG_DONE LED blinks slowly.
@@ -51,12 +57,12 @@ The program continuously sends, receives and verifies data. As long as no except
 ##### Porting to a different board / device
 Ideally, changing the device in Vivado should be sufficient (the project does not use any LOC-constrained pins). It uses the PROG_DONE LED, which is found on most boards (controlled by software via bit 0 of the example design's register 0x12345678)
 
-### What licenses do I need?
-* Vivado webpack (no cost)
-* Visual studio for compilation. A free .NET environment e.g. [sharpDevelop](https://sourceforge.net/projects/sharpdevelop/) should work but is untested
+### Licenses
+* Vivado webpack (no cost) for the FPGA side
+* either Visual Studio or [sharpDevelop](https://sourceforge.net/projects/sharpdevelop/) for compilation of the C# code
 * FTDI's managed .NET wrapper which is [provided by FTDI](https://www.ftdichip.com/Support/SoftwareExamples/CodeExamples/CSharp.htm) as a "free download" (included by the terms of its own license)
 * [FTDI's D2XX drivers](https://www.ftdichip.com/Drivers/D2XX.htm) installed on the machine
-* The interface does NOT require a Digilent JTAG license, as it is completely independent (but it does not interfere either)
+* Note, the interface does NOT require a Digilent JTAG license, as it is completely independent (but it does not interfere either)
 
 ### How much space does it need?
 After stripping off example features (e.g. BRAM), the required resources are minimal, comparable to a UART. 
@@ -68,7 +74,7 @@ The design requires one BSCANE2 instantiation (of which there are four in total 
 * Does the board support 30 MBit/s between FTDI chip and FPGA? For example, [this FTDI board](https://shop.trenz-electronic.de/en/Products/Trenz-Electronic/Open-Hardware/Xmod-FTDI-JTAG-Adapter/) is limited to 15 MBit/s, most likely because of the CPLD
 * Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [
 A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
-* Is another FTDI device present? The example code searches for "DIGILENT ADEPT USB DEVICE A" in the FTDI chip's description string (EEPROM). For non-Digilent boards, this needs to be edited.
+* Is another FTDI device present? The example code searches for "DIGILENT ADEPT USB DEVICE A" in the FTDI chip's description string (EEPROM). For non-Digilent boards, the string should be edited. Please note, the letter "A" or "B" ("C", "D" for FT4232) is appended by the FTDI chip hardware.
 * Electrical problems (USB cable, power supply, microcracks in PCB traces, ...) are not unheard of.
 
 ### But the example design has no clock input!?
@@ -85,9 +91,6 @@ Because it's as fast as it goes, using only the standard FTDI/JTAG interface (wh
 There are a few annoying details that were worked around without losing clock cycles, like splitting off the 8th bit for JTAG state transitions.  
 
 On the bright side: Bitstream upload alone does not need most of the C# code.
-
-### Shouldn't I get 480 MBit/s?
-Check the *parallel* mode of the FTDI chip on two devices simultaneously (MPSSE is, after all, still serial)
 
 ### In Vivado, the clock domain crossing gives a (methodology) warning!
 One of those "annoying" details... it's for a reason.
@@ -119,3 +122,10 @@ Uncomment this line (note, the effective division ratio of the FTDI hardware is 
 ```C#
 //clkDiv = 10; Console.WriteLine("DEBUG: clkDiv="+clkDiv);
 ```
+Bitstream upload will take longer, and reported read margins should increase.
+
+### Shouldn't I get 480 MBit/s?
+Check the *parallel* mode of the FTDI chip on two devices simultaneously (MPSSE is, after all, still serial)
+
+### FT4232H ports C/D don't work!
+There are only two MPSSE engines on the 4232H chip (A/B).
