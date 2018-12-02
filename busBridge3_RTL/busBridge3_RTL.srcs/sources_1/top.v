@@ -377,12 +377,54 @@ module testmem(i_clk, i_addr, o_ack, i_we, i_data, i_re, o_data);
    end         
 endmodule
 
+// === fully independent byte-level demo on USER2 ===
+// - returns bit-inverse of incoming data
+// - startup return value is 0x5A
+module USER2demo(input wire clk);
+   reg [7:0] 	    dataTx = 8'd0;
+   wire [7:0] 	    dataRx;
+   wire 	    rxStrobeJtagClk;
+   wire 	    txStrobeJtagClk;
+   wire 	    syncStrobeJtagClk;
+   wire 	    evtToggleJtagClk;
+   jtagByteIf #(.USER(2)) ifUserDemo (.i_dataTx(dataTx), .o_dataRx(dataRx), .o_tx(txStrobeJtagClk), .o_rx(rxStrobeJtagClk), .o_sync(syncStrobeJtagClk), .o_toggle(evtToggleJtagClk));
+
+   // === CDX to application clock domain ===
+   wire 	    evt;
+   toggleDet iTd1(.i_clk(clk), .i_toggle(evtToggleJtagClk), .o_strobe(evt)); // evt changes late
+   wire 	    rxStrobe 		= evt & rxStrobeJtagClk;
+   wire 	    txStrobe 		= evt & txStrobeJtagClk;
+   wire 	    syncStrobe		= evt & syncStrobeJtagClk;
+   
+   // === simulate processing delay ===
+   // the maximum possible number of registers depends on the JTAG frequency (FTDI clock divider) and the application clock frequency
+   reg [7:0] 	    app1 = 8'hxx;
+   reg [7:0] 	    app2 = 8'hxx;
+   reg [7:0] 	    app3 = 8'hxx;
+   always @(posedge clk) begin
+      app3 <= ~app2; // demo app functionality: return inverted receive data
+      app2 <= app1;
+      
+      if (rxStrobe) // inbound byte
+	app1 <= dataRx;
+      if (txStrobe) // outbound byte
+	dataTx <= app3;      
+      if (syncStrobe) begin // JTAG connection init (and outbound byte)
+	 dataTx <= 8'hA5; 
+	 app1 <= 8'hA5;	 // "application reset" (this gives ~0xA5 = 0x5A for the 2nd byte)
+      end
+   end
+endmodule
+
 // top level module, example implementation
 module top();   
+   // === STARTUPE2 block for board-independent clock and LED ===
    wire 	    LED; // we hijack the PROG_DONE LED, which is a fairly common board feature
    wire 	    clk; // clock comes from the FPGA's own 65 MHz (-ish) ring oscillator. Please use a proper crystal-based clock in any "serious" design
    STARTUPE2 iStartupE2(.USRCCLKO(1'b0), .USRCCLKTS(1'b0), .USRDONEO(LED), .USRDONETS(1'b0), .CFGMCLK(clk));
-   wire 	    CLK = clk;
+   
+   // === fully independent byte-level (protocol-free) demo on USER2 port ===
+   USER2demo iUser2demo(.clk(clk));
    
    // === JTAG serial to byte-parallel (JTAG clock domain) ===
    wire [7:0] 	    dataTx;
@@ -395,7 +437,7 @@ module top();
    
    // === CDX to application clock domain ===
    wire 	    evt;
-   toggleDet iTd1(.i_clk(CLK), .i_toggle(evtToggleJtagClk), .o_strobe(evt)); // evt changes late
+   toggleDet iTd1(.i_clk(clk), .i_toggle(evtToggleJtagClk), .o_strobe(evt)); // evt changes late
    wire 	    rxStrobe 		= evt & rxStrobeJtagClk;
    wire 	    txStrobe 		= evt & txStrobeJtagClk;
    wire 	    syncStrobe	= evt & syncStrobeJtagClk;
@@ -408,7 +450,7 @@ module top();
    reg [31:0] 	    busData_S2M; // readback data (slave-to-master)
    wire 	    busAck_S2M; // readback data valid (slave-to-master)
    busBridge3 if2
-     (.i_CLK(CLK),
+     (.i_CLK(clk),
       .i_dataRx(dataRx),
       .i_strobeRx(rxStrobe),
       .o_dataTx(dataTx),
@@ -429,7 +471,7 @@ module top();
    wire [31:0] 	    MEM_outData;
    wire 	    MEM_ack;   
    testmem #(.ADDRVAL(32'hF0000000))iMem
-     (.i_clk(CLK), 
+     (.i_clk(clk), 
       .i_addr(busAddr), 
       .i_we(busWe), 
       .i_data(busData), 
@@ -440,7 +482,7 @@ module top();
    // === simple demo slave 1 (32 bit reg) ===
    reg [31:0] 	    R0 = 32'd0;
    reg 		    R0_ack = 1'b0;
-   always @(posedge CLK) begin
+   always @(posedge clk) begin
       R0_ack <= 1'b0;      
       if (busAddr == 32'h12345678) begin
 	 if (busWe) R0 <= busData;
@@ -452,7 +494,7 @@ module top();
    // === simple demo slave 2 (32 bit reg) ===
    reg [31:0] 	       R1 = 32'd0;
    reg 		       R1_ack = 1'b0;
-   always @(posedge CLK) begin
+   always @(posedge clk) begin
       R1_ack <= 1'b0;      
       if (busAddr == 32'h87654321) begin
 	 if (busWe) R1 <= busData;
@@ -467,7 +509,7 @@ module top();
    reg [31:0] 	       R2a = 32'd0;
    reg [31:0] 	       R2b = 32'd0;
    reg 		       R2_ack = 1'b0;
-   always @(posedge CLK) begin
+   always @(posedge clk) begin
       R2b 	<= R2b == 0 ? R2b : R2b-32'd1;
       R2_ack 	<= R2b == 32'd1 ? 1'b1 : 1'b0;
       

@@ -226,9 +226,8 @@ namespace busbridge3 {
             this.state = state_e.runTestIdle;
         }
 
-        /// <summary>
-        /// returns the readback result of rwNBits()
-        /// </summary>
+        /// <summary>returns the readback result of rwNBits()</summary>
+        /// <param name="n">number of bytes to return</param>
         /// <returns>read data</returns>
         public byte[] getReadCopy(int n) {
             return this.io.getReadCopy(n);

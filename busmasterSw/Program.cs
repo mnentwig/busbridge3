@@ -154,6 +154,12 @@ class Program {
 
         // === self test ===
         for(long count = 0;count > -1;++count) {
+
+            // === simple, byte-level demo on USER2 opcode (no bus interface, no protocol) ===
+            USER2_demo(jtag);
+            USER2_demo(jtag); // run twice
+
+            // === bus-interface based demo on USER1 opcode ===
             int memSize = 16384;
             uint ram = 0xF0000000;
 
@@ -282,5 +288,41 @@ class Program {
 
     static void printLine(string msg) {
         Console.WriteLine(msg);
+    }
+
+    static void USER2_demo(ftdi_jtag jtag) {
+        byte[] buf1 = new byte[1];
+        byte[] bufPayload = new byte[123456];
+        for(int ix = 0;ix < bufPayload.Length;++ix)
+            bufPayload[ix] = (byte)(255-(ix % 256)); // 255, 254, 253, ...
+
+        // === USERx instruction ===
+        buf1[0] = /*USER2*/0x03;
+        jtag.state_shiftIr();
+        jtag.rwNBits(6, buf1, false);
+        jtag.state_shiftDr();
+
+        jtag.rwNBits(bufPayload.Length*8, bufPayload, true);
+        int nRead = jtag.exec();
+        byte[] readbackData = jtag.getReadCopy(nRead);
+
+        // Short Version: Skip the first three bytes of the response. Pad the outbound data with three dummy bytes to get the full response.
+        // In detail:
+        // readbackData[0]: The value that was present on jtagByteIf.i_dataTx when the JTAG connection was opened
+        //   if this byte is used, it needs to be provided by the application in advance, without being initiated from JTAG
+        //   the demo code leaves this value undefined / uncontrolled.
+        // readbackData[1]: The value returned in response to jtagByteIf.o_sync / o_tx. The demo code uses 0xA5 (arbitrary choice)
+        // readbackData[2]: The first (initial) output value from the application, not yet in response to inbound data (which arrives at the same time).
+        //   the demo code uses the inverse of 0xA5 == 0x5A (arbitrary choice)
+        // readbackData[3]: Result in response to the first incoming byte
+        // readbackData[4]: Result in response to the second incoming byte
+        // ...
+
+        // do not check byte 0 (repeated runs would fail)
+        if(readbackData[1] != 0xA5) throw new Exception("unexpected byte 1");
+        if(readbackData[2] != 0x5A) throw new Exception("unexpected byte 2");
+        for(int ix = 0;ix < bufPayload.Length-3;++ix)
+        	if(readbackData[ix+3] != (byte)(~bufPayload[ix] & 0xFF))
+                throw new Exception("unexpected readback data (expected byte inversion by USER2demo");
     }
 }
