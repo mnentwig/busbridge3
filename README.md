@@ -48,11 +48,11 @@ Connect a [CMOD A7/35T](https://store.digilentinc.com/cmod-a7-breadboardable-art
 ##### Compile: sharpDevelop (GPL)
 * In [sharpDevelop 5.1](https://sourceforge.net/projects/sharpdevelop/), open _sharpDevelopBuild/sharpDevelopBuild.sln_
 * Press F5 to build and run
+* Note: For the time being, this .sln file does not build a separate DLL, like its VS counterpart.
 
 ##### Compile: other build tools (e.g. older Visual Studio)
 * Create a new Console Application project
 * Import all .cs files from _busBridge3_ and _busmasterSw_
-* Note: This project does not use a separate DLL
 
 ##### Validating functionality
 Running the C# code shows a console window, and the yellow PROG_DONE LED blinks slowly.
