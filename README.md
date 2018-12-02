@@ -25,21 +25,38 @@ The user RTL code must be designed to provide (and acknowledge) readback data in
 
 Optionally, application code can query the remaining number of clock cycles for past reads, and re-schedule them if out of margin (practical if reads are free of side effects and read timeouts are a rare but not impossible event)
 
+### Bitstream uploader
+A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
+
+### Running the demo project / Versions
+##### Bitstream compilation
+Open _busBridge3_RTL/busBridge3_RTL.xpr_ in _Vivado 2018.1_. Select _PROGRAM AND DEBUG/Generate Bitstream_. Typical build time: 22 + 59 seconds (synthesis/implementation)
+
+##### Hardware installation
+Connect a [CMOD A7/35T](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/) module to USB, disconnect any other Digilent-supported USB devices. If necessary, install FTDI's D2XX drivers (see below).
+
+##### Compile: Visual Studio (Microsoft)
+* In _Visual Studio 2017_ e.g. Community Edition, open _busmasterSw/busmasterSw.sln_
+* Press F5 to build and run (any combination of Debug/Release/Any CPU/x86/x64 should work)
+
+##### Compile: sharpDevelop (GPL)
+* In [sharpDevelop 5.1](https://sourceforge.net/projects/sharpdevelop/), open _sharpDevelopBuild/sharpDevelopBuild.sln_
+* Press F5 to build and run
+
+##### Validating functionality
+Running the C# code shows a console window, and the yellow PROG_DONE LED blinks slowly.
+
+The program continuously sends, receives and verifies data. As long as no exception is thrown, everything should be OK.
+
+##### Porting to a different board / device
+Ideally, changing the device in Vivado should be sufficient (the project does not use any LOC-constrained pins). It uses the PROG_DONE LED, which is found on most boards (controlled by software via bit 0 of the example design's register 0x12345678)
+
 ### What licenses do I need?
 * Vivado webpack (no cost)
 * Visual studio for compilation. A free .NET environment e.g. [sharpDevelop](https://sourceforge.net/projects/sharpdevelop/) should work but is untested
 * FTDI's managed .NET wrapper which is [provided by FTDI](https://www.ftdichip.com/Support/SoftwareExamples/CodeExamples/CSharp.htm) as a "free download" (included by the terms of its own license)
 * [FTDI's D2XX drivers](https://www.ftdichip.com/Drivers/D2XX.htm) installed on the machine
 * The interface does NOT require a Digilent JTAG license, as it is completely independent (but it does not interfere either)
-
-### Versions
-* Visual studio: 2017 (community edition will do)
-* alternative to VS: [sharpDevelop 5.1](https://sourceforge.net/projects/sharpdevelop/)
-* Vivado: 2018.1
-* Default FPGA board: CMOD A7-35T. Review the Vivado project (at least change the device) for other boards. Note, the project does not require any LOC-constrained pins.
-
-### Bitstream uploader
-A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
 
 ### How much space does it need?
 After stripping off example features (e.g. BRAM), the required resources are minimal, comparable to a UART. 
@@ -95,7 +112,7 @@ There are three main folders:
 
 After cloning from git, first build the RTL project in Vivado for the correct FPGA (default is Artix 7 35 cpg236). Then build and run busmasterSw/busmasterSw.sln. It will upload the bitstream from the RTL folder.
 
-If successful, the PROG_DONE LED will change about once per second (slightly slower), as long as the software is running (controlled by software via bit 0 of the example design's register 0x12345678)
+If successful, the PROG_DONE LED will blink at ~0.5 Hz, controlled by software (via bit 0 of the example design's register 0x12345678)
 
 ### Slowing down JTAG
 Uncomment this line (note, the effective division ratio of the FTDI hardware is clkDiv+1)
