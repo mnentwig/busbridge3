@@ -27,6 +27,9 @@ The user RTL code must be designed to provide (and acknowledge) readback data in
 
 Optionally, application code can query the remaining number of clock cycles for past reads, and re-schedule them if out of margin (practical if reads are free of side effects and read timeouts are a rare but not impossible event)
 
+### Bytestream interface
+The bus-style interface is built on top of a bytestream layer, where bytes sent from the PC are provided to the FPGA fabric without any protocol. An example for standalone use of this mode is included.
+
 ### Bitstream uploader
 A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
 
