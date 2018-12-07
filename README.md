@@ -6,10 +6,12 @@ Xilinx 7-series FTDI-FPGA interface through JTAG with 125 us roundtrip latency.
 * Xilinx 7-series (Artix). Conceptually proven also on 6-series (Spartan)
 
 ### Purpose
-* Interfacing of PC to FPGA device with minimal latency and high throughput far beyond UART mode
-* Includes bitstream uploader (which can be also used standalone)
+* Interfacing of PC to FPGA device through the standard FTDI/JTAG port with minimal latency and high throughput far beyond UART mode
+* simple bytestream interface
+* protocol-based bus-style interface (built on top of bytestream)
+* JTAG bitstream uploader
 
-Compared to a UART, the MPSSE-based approach achieves ~5x throughput (approaching the FTDI MPSSE hardware limit of 30 MBit/s) and ~3x better latency (reaching the limit set by [USB 2.0 125 us microframe structure](http://www.usbmadesimple.co.uk/ums_6.htm), that is, the interface can reach 8000 independent command-response transactions per second.
+Compared to a UART, this implementation is based on FTDI's MPSSE mode and achieves ~5x throughput (approaching the FTDI MPSSE hardware limit of 30 MBit/s) and ~3x better latency (reaching the limit set by [USB 2.0 125 us microframe structure](http://www.usbmadesimple.co.uk/ums_6.htm). That is, the interface can handle 8000 independent command-response transactions per second.
 
 Most Xilinx-boards support FTDI-based JTAG in a [standard configuration](https://www.ftdichip.com/Support/Documents/AppNotes/AN_129_FTDI_Hi_Speed_USB_To_JTAG_Example.pdf) with correct pinout for using [MPSSE-mode](https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf). 
 
@@ -24,6 +26,9 @@ On the software side, transactions are collected and executed in bulk on demand.
 The user RTL code must be designed to provide (and acknowledge) readback data in time to be returned with the next JTAG byte. Given the relatively low data rate, this can usually be guaranteed-by-design in the user RTL. 
 
 Optionally, application code can query the remaining number of clock cycles for past reads, and re-schedule them if out of margin (practical if reads are free of side effects and read timeouts are a rare but not impossible event)
+
+### Bytestream interface
+The bus-style interface is built on top of a bytestream layer, where bytes sent from the PC are provided to the FPGA fabric without any protocol. An example for standalone use of this mode (which is conceptually close to SPI) is included.
 
 ### Bitstream uploader
 A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
@@ -43,11 +48,11 @@ Connect a [CMOD A7/35T](https://store.digilentinc.com/cmod-a7-breadboardable-art
 ##### Compile: sharpDevelop (GPL)
 * In [sharpDevelop 5.1](https://sourceforge.net/projects/sharpdevelop/), open _sharpDevelopBuild/sharpDevelopBuild.sln_
 * Press F5 to build and run
+* Note: For the time being, this .sln file does not build a separate DLL, like its VS counterpart.
 
 ##### Compile: other build tools (e.g. older Visual Studio)
 * Create a new Console Application project
 * Import all .cs files from _busBridge3_ and _busmasterSw_
-* Note: This project does not use a separate DLL
 
 ##### Validating functionality
 Running the C# code shows a console window, and the yellow PROG_DONE LED blinks slowly.
@@ -72,8 +77,8 @@ The design requires one BSCANE2 instantiation (of which there are four in total 
 ### But it doesn't work!
 * Is the FTDI chip already opened e.g. by Vivado?
 * Does the board support 30 MBit/s between FTDI chip and FPGA? For example, [this FTDI board](https://shop.trenz-electronic.de/en/Products/Trenz-Electronic/Open-Hardware/Xmod-FTDI-JTAG-Adapter/) is limited to 15 MBit/s, most likely because of the CPLD
-* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [
-A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
+* Does the board require a specific GPO configuration on the FTDI chip e.g. to enable buffers? The example code is for [CMOD
+ A7](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/), which requires one GPO-bit to enable JTAG buffers.
 * Is another FTDI device present? The example code searches for "DIGILENT ADEPT USB DEVICE A" in the FTDI chip's description string (EEPROM). For non-Digilent boards, the string should be edited. Please note, the letter "A" or "B" ("C", "D" for FT4232) is appended by the FTDI chip hardware.
 * Electrical problems (USB cable, power supply, microcracks in PCB traces, ...) are not unheard of.
 
