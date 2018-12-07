@@ -20,7 +20,8 @@ class Program {
         // device identification from the FTDI chip's EEPROM
         // as reported by FTPROG utility
         // note: DO NOT use FTPROG to write to Digilent devices, it will overwrite the license key for Xilinx tools
-        string devSearchString = "DIGILENT ADEPT USB DEVICE A";
+        string devSearchString = "DIGILENT ADEPT USB DEVICE A"; // CMOD A7
+        // string devSearchString = "DIGILENT USB DEVICE A"; // other devices may use this description
 
         // === identify suitable FTDI device ===
         print("Enumerating FTDI devices..."); sw2.Reset(); sw2.Start();
@@ -32,7 +33,13 @@ class Program {
         s = myFtdiDevice.GetDeviceList(ftdiDeviceList); chk(s);
         printLine(sw2.ElapsedMilliseconds+" ms");
 
+        printLine("Devices found:");
+        for(UInt32 i = 0;i < n;i++)
+            if(ftdiDeviceList[i] != null)
+                Console.WriteLine(">> '"+ftdiDeviceList[i].Description+"' SN:" + ftdiDeviceList[i].SerialNumber);
+
         print("Scanning FTDI devices for name '"+devSearchString+"'..."); sw2.Reset(); sw2.Start();
+
         int ixDev = -1;
         for(UInt32 i = 0;i < n;i++) {
             if(ftdiDeviceList[i] == null)
@@ -50,7 +57,7 @@ class Program {
         printLine(sw2.ElapsedMilliseconds+" ms");
 
         // === create FTDI MPSSE-level IO object ===
-        ftdi2_io io = new ftdi2_io(myFtdiDevice,maxTransferSize: 65535);
+        ftdi2_io io = new ftdi2_io(myFtdiDevice,maxTransferSize: 500000); // maxTransferSize can strongly affect roundtrip time / latency. Experiment!
 
         // === create JTAG-level IO ===
         print("getting IDCODE..."); sw2.Reset(); sw2.Start();
@@ -59,36 +66,14 @@ class Program {
         ftdi_jtag jtag = new ftdi_jtag(io,clkDiv: clkDiv);
 
         byte[] bufa = null;
-#if true
-        // === testcase for JTAG read splitting, where the final bit needs a separate command to set TMS ===
-        // see bb3_lvl2_io.cs for the relevant code
-        // Repeat cycling through the JTAG state machine and read IDCODE. At FTDI driver level, this is fairly complex 
-        // since the final bit with TMS = 1 needs to be split off into a separate command, returning a separate byte
-        jtag.state_testLogicReset();
-        jtag.state_shiftIr();
-        // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
-        bufa = new byte[] { /* opcode for IDCODE */0x09 };
-        jtag.rwNBits(6,bufa,false); // 6-bit opcode length
 
-        // note: repeated reads don't change the IDCODE opcode - above command is needed only once
-        int nRepRead = 20;
-        for(int nBits = 25;nBits <= 32;++nBits) { // exercise all combinations that return four bytes (different command patterns at FTDI opcode level)
-            for(int ix = 0;ix < nRepRead;++ix) {
-                // === get IDCODE ===
-                bufa = new byte[4];
-                jtag.state_shiftDr();
-                jtag.rwNBits(nBits,bufa,true);
-            }
-            bufa = jtag.getReadCopy(jtag.exec());
-            if(bufa.Length != nRepRead * 4) throw new Exception("unexpected number of returned readback bytes");
-            for(int ix = 1;ix < nRepRead;++ix) {
-                if((bufa[0] != bufa[4*ix]) || (bufa[1] != bufa[4*ix+1]) || (bufa[2] != bufa[4*ix+2]) || (bufa[3] != bufa[4*ix+3]))
-                    throw new Exception("expected to get repetitions of the same response");
-            }
-        }
-#endif
+        // === verify that there is exactly one chained device on the bus ===
+        bypassTest(jtag);
 
-        // === get IDCODE (independently of above testcase) ===
+        // === internal test (largely SW) ===
+        internalSplitReadTest(jtag);
+
+        // === get IDCODE ===
         jtag.state_testLogicReset();
         jtag.state_shiftIr();
         // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
@@ -104,6 +89,7 @@ class Program {
         printLine(sw2.ElapsedMilliseconds+" ms");
         Console.WriteLine("IDCODE {0:X8}",idCode);
 
+#if false
         // === determine FPGA ===
         // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 14
         string bitstreamFile;
@@ -116,8 +102,9 @@ class Program {
             case 0x3636093: bitstreamFile = "XC7A200T.bit"; break;
             default: throw new Exception(String.Format("unsupported FPGA (unknown IDCODE 0x{0:X7})",idCode));
         }
-
-        bitstreamFile = @"..\..\..\busBridge3_RTL\busBridge3_RTL.runs\impl_1\top.bit"; Console.WriteLine("DEBUG: Trying to open bitstream from "+bitstreamFile);
+#else
+        string bitstreamFile = @"..\..\..\busBridge3_RTL\busBridge3_RTL.runs\impl_1\top.bit"; Console.WriteLine("DEBUG: Trying to open bitstream from "+bitstreamFile);
+#endif
         byte[] bitstream = System.IO.File.ReadAllBytes(bitstreamFile);
 
         // === upload to FPGA ===
@@ -166,7 +153,7 @@ class Program {
             sw2.Reset(); sw2.Start();
             int nRep = 1000;
             m.memTest32(memSize: 1,baseAddr: 0x87654321,nIter: nRep);
-            Console.WriteLine("roundtrip time "+((double)sw2.ElapsedMilliseconds/(double)nRep)+" ms (should be close to 0.125 ms from 8 kHz USB 2.0 microframe rate)");
+            Console.WriteLine("roundtrip time "+(1000*(double)sw2.ElapsedMilliseconds/(double)nRep)+" microseconds");
 
             m.memTest8(memSize: memSize,baseAddr: ram,nIter: 40);
             m.memTest16(memSize: memSize,baseAddr: ram,nIter: 20);
@@ -197,9 +184,15 @@ class Program {
             UInt16 margin3 = m.getUInt16(handle3);
             UInt16 m3 = m.getUInt16(h0);
             Console.WriteLine("configured test register delay: " +m3+" remaining margin: "+margin3);
+
+            if(count == 0) {
+                Console.WriteLine("#########################################################################");
+                Console.WriteLine("### All tests passed. Press RETURN to proceed with continuous testing ###");
+                Console.WriteLine("#########################################################################");
+                Console.ReadLine();
+            }
+            Console.WriteLine("press CTRL-C or close console window to quit");
         }
-        Console.WriteLine("All tests passed. Press RETURN to close");
-        Console.ReadLine();
     }
 
     static void uploadBitstream(ftdi_jtag jtag,byte[] buf) {
@@ -253,6 +246,7 @@ class Program {
         jtag.state_shiftIr();
         jtag.rwNBits(6,b1,false);
 
+        // === required clock cycles for SHUTDOWN ===
         jtag.clockN(16);
 
         // === issue CFG_IN command ===
@@ -264,6 +258,7 @@ class Program {
         jtag.state_shiftDr();
         jtag.rwNBits(buf.Length*8,buf,false);
 
+        // === one clock cycle ===
         jtag.clockN(1);
 
         // === issue JSTART command ===
@@ -271,6 +266,7 @@ class Program {
         jtag.state_shiftIr();
         jtag.rwNBits(6,b1,false);
 
+        // === more clock cycles ===
         jtag.clockN(32);
 
         // === run the command sequence that was constructed in memory ===
@@ -281,9 +277,58 @@ class Program {
         if(s != FTDI.FT_STATUS.FT_OK)
             throw new Exception(s.ToString());
     }
+
     static void print(string msg) {
         Console.Write(msg);
         Console.OpenStandardOutput().Flush();
+    }
+
+    /// <summary>Asserts that exactly one device appears on the JTAG port in response to the 1149.1 standard BYPASS opcode</summary>
+    /// <param name="jtag">JTAG device</param>
+    static void bypassTest(ftdi_jtag jtag) {
+        jtag.state_testLogicReset();
+        jtag.state_shiftIr();
+        // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 BYPASS == 0b111111
+        byte[] bufa = new byte[] { /* 3 x opcode for BYPASS */0xFF, 0xFF, 0xFF };
+        jtag.rwNBits(24,bufa,false); // 3*6-bit opcode length
+
+        // === get response ===
+        bufa = new byte[] { 0x01};
+        jtag.state_shiftDr();
+        jtag.rwNBits(nBits: 8,data: bufa,read: true);
+        bufa = jtag.getReadCopy(jtag.exec());
+        if(bufa[0] != 0x02)
+            throw new Exception("JTAG BYPASS test failed - expect written data delayed by 1 bit");
+    }
+
+    /// <summary>testcase for JTAG read splitting, where the final bit needs a separate command to set TMS. Largely tests the software.</summary>
+    /// <param name="jtag">JTAG device</param>
+    static void internalSplitReadTest(ftdi_jtag jtag) {
+        // see bb3_lvl2_io.cs for the relevant code
+        // Repeat cycling through the JTAG state machine and read IDCODE. At FTDI driver level, this is fairly complex 
+        // since the final bit with TMS = 1 needs to be split off into a separate command, returning a separate byte
+        jtag.state_testLogicReset();
+        jtag.state_shiftIr();
+        // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
+        byte[] bufa = new byte[] { /* opcode for IDCODE */0x09 };
+        jtag.rwNBits(6,bufa,false); // 6-bit opcode length
+
+        // note: repeated reads don't change the IDCODE opcode - above command is needed only once
+        int nRepRead = 20;
+        for(int nBits = 25;nBits <= 32;++nBits) { // exercise all combinations that return four bytes (different command patterns at FTDI opcode level)
+            for(int ix = 0;ix<nRepRead;++ix) {
+                // === get IDCODE ===
+                bufa = new byte[4];
+                jtag.state_shiftDr();
+                jtag.rwNBits(nBits,bufa,true);
+            }
+            bufa = jtag.getReadCopy(jtag.exec());
+            if(bufa.Length != nRepRead* 4) throw new Exception("unexpected number of returned readback bytes");
+            for(int ix = 1;ix<nRepRead;++ix) {
+                if((bufa[0] != bufa[4*ix]) || (bufa[1] != bufa[4*ix+1]) || (bufa[2] != bufa[4*ix+2]) || (bufa[3] != bufa[4*ix+3]))
+                    throw new Exception("expected to get repetitions of the same response");
+            }
+        }
     }
 
     static void printLine(string msg) {
@@ -299,10 +344,10 @@ class Program {
         // === USERx instruction ===
         buf1[0] = /*USER2*/0x03;
         jtag.state_shiftIr();
-        jtag.rwNBits(6, buf1, false);
+        jtag.rwNBits(6,buf1,false);
         jtag.state_shiftDr();
 
-        jtag.rwNBits(bufPayload.Length*8, bufPayload, true);
+        jtag.rwNBits(bufPayload.Length*8,bufPayload,true);
         int nRead = jtag.exec();
         byte[] readbackData = jtag.getReadCopy(nRead);
 
@@ -322,7 +367,7 @@ class Program {
         if(readbackData[1] != 0xA5) throw new Exception("unexpected byte 1");
         if(readbackData[2] != 0x5A) throw new Exception("unexpected byte 2");
         for(int ix = 0;ix < bufPayload.Length-3;++ix)
-        	if(readbackData[ix+3] != (byte)(~bufPayload[ix] & 0xFF))
+            if(readbackData[ix+3] != (byte)(~bufPayload[ix] & 0xFF))
                 throw new Exception("unexpected readback data (expected byte inversion by USER2demo");
     }
 }

@@ -15,7 +15,10 @@ namespace busbridge3 {
         protected uint nReadPending = 0;
         private uint nWritePending = 0;
         protected int nReadDone = 0;
-            
+
+        /// <summary>Returns readback data from the last call to exec() in a newly allocated buffer</summary>
+        /// <param name="n">number of bytes to return</param>
+        /// <returns>Readback data</returns>
         public byte[] getReadCopy(int n) {
             byte[] val = new byte[n];
             Buffer.BlockCopy(this.readData, 0, val, 0, n);
@@ -27,8 +30,10 @@ namespace busbridge3 {
                 throw new Exception(s.ToString());
         }
 
+        /// <summary>Sends queued data and possibly reads back from USB</summary>
+        /// <returns>amount of available readback bytes</returns>
         public virtual int exec() {
-            this.tmpBuf256[0] = 0x87; // exec immediately
+            this.tmpBuf256[0] = 0x87; // FTDI MPSSE: exec immediately
             this.wr(tmpBuf256,nWrite :1);
             this.flush(finalizeReads :true);
 
@@ -56,10 +61,11 @@ namespace busbridge3 {
 #if false
             // === TORTURE TEST ===
             // write single byte
-            nW1 = Math.Min(nW1, 1000);
+            nW1 = Math.Min(nW1, 1); // go get some coffee...
 #endif
                 uint nW2 = 0;
                 if(pW == 0) {
+                    // optimization: Write from start of buffer, avoid unnecessary block copy
                     this.chk(this.dev.Write(this.writeData,numBytesToWrite :nW1,numBytesWritten :ref nW2));
                 }
                 else {
@@ -103,9 +109,8 @@ namespace busbridge3 {
                 nR1a = Math.Min(nR1a, 1);
 #endif
                     uint nR2 = 0;
-
-                    //Console.WriteLine(nR1a);
                     if(/*false && */(this.nReadDone == 0)) {
+                        // optimization: Read to start of buffer, avoid unnecessary block copy
                         this.chk(this.dev.Read(this.readData,(uint)nR1a,ref nR2));
                         if(nR2 == 0)
                             throw new Exception();
@@ -125,20 +130,12 @@ namespace busbridge3 {
             this.nWritePending = 0;
         }
 
+        /// <summary>Write data</summary>
+        /// <param name="data">Bytestream to write to FTDI MPSSE</param>
+        /// <param name="nWrite">number of bytes to write</param>
+        /// <param name="nRead">how many readback bytes this command generates on the chip</param>
+        /// <param name="nOffset">start offset into data</param>
         public void wr(byte[] data,int nWrite,int nRead = 0,int nOffset = 0) {
-
-#if false
-       // === debug: insert "execute immediately" MPSSE token ===
-        // THIS DOES NOT WORK (returns 0x87 in read data ?! why?)
-        byte[] d2 = new byte[nWrite + 3];
-        Buffer.BlockCopy(data, 0, d2, 0, nWrite);
-        d2[nWrite] = 0x87;
-        d2[nWrite+1] = 0x87;
-        d2[nWrite+2] = 0x87;
-        nWrite += 3;
-        data = d2;
-#endif
-
             this.nReadPending += (uint)nRead;
             int pos = nOffset;
             while(nWrite > 0) {
@@ -159,6 +156,10 @@ namespace busbridge3 {
             }
         }
 
+        /// <summary>create new FTDI io object</summary>
+        /// <param name="dev">FTDI device to open</param>
+        /// <param name="maxTransferSize">max. internal block size (matters only for performance, not functionality)</param>
+        /// <param name="timeout_ms">timeout in milliseconds(this is not expected to happen)</param>
         public ftdi_io(FTDI dev,int maxTransferSize = 65535,uint timeout_ms = 1000) {
             this.dev = dev;
             this.maxTransferSize = maxTransferSize;
