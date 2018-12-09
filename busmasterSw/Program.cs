@@ -60,7 +60,6 @@ class Program {
         ftdi2_io io = new ftdi2_io(myFtdiDevice,maxTransferSize: 500000); // maxTransferSize can strongly affect roundtrip time / latency. Experiment!
 
         // === create JTAG-level IO ===
-        print("getting IDCODE..."); sw2.Reset(); sw2.Start();
         uint clkDiv = 0;
         //clkDiv = 10; Console.WriteLine("DEBUG: clkDiv="+clkDiv);
         ftdi_jtag jtag = new ftdi_jtag(io,clkDiv: clkDiv);
@@ -68,18 +67,22 @@ class Program {
         byte[] bufa = null;
 
         // === verify that there is exactly one chained device on the bus ===
+        print("(optional): testing bypass register..."); sw2.Reset(); sw2.Start();
         bypassTest(jtag);
+        printLine(sw2.ElapsedMilliseconds+" ms");
 
         // === internal test (largely SW) ===
+        print("(optional): testing internal split reads..."); sw2.Reset(); sw2.Start();
         internalSplitReadTest(jtag);
+        printLine(sw2.ElapsedMilliseconds+" ms");
 
         // === get IDCODE ===
+        print("getting IDCODE..."); sw2.Reset(); sw2.Start();
         jtag.state_testLogicReset();
         jtag.state_shiftIr();
         // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 IDCODE == 0b001001
         bufa = new byte[] { /* opcode for IDCODE */0x09 };
         jtag.rwNBits(6,bufa,false); // 6-bit opcode length
-
         bufa = new byte[4];
         jtag.state_shiftDr();
         jtag.rwNBits(32,bufa,true);
@@ -170,20 +173,25 @@ class Program {
             int handle2 = m.queryMargin();
 
             // configure test register delay, read and check margin
+            // see RTL code
             UInt32 regVarReadLen = 0x98765432;
-            m.write(addr: regVarReadLen,data: 14);
+            m.write(addr: regVarReadLen,data: 14); // 14 is the limit for 30 MHz JTAG, ~65 MHz FPGA clock
             int h0 = m.readUInt32(addr: regVarReadLen);
             int handle3 = m.queryMargin();
 
             m.exec(); // all transactions to hardware
 
+            // === perform several reads and determine, how many FPGA clock cycles are left before a read timeout ===
             UInt16 margin = m.getUInt16(handle);
-            Console.WriteLine("margin 1: " + margin);
+            Console.WriteLine("readback margin 1: " + margin + " FPGA clock cycles");
+            if(margin < 1) Console.WriteLine("WARNING: Read timed out. Slow down JTAG or increase FPGA clock frequency.");
             UInt16 margin2 = m.getUInt16(handle2);
-            Console.WriteLine("margin 2: " +margin2);
+            Console.WriteLine("margin 2: " +margin2 + " FPGA clock cycles");
+            if(margin2 < 1) Console.WriteLine("WARNING: Read timed out. Slow down JTAG or increase FPGA clock frequency.");
             UInt16 margin3 = m.getUInt16(handle3);
             UInt16 m3 = m.getUInt16(h0);
-            Console.WriteLine("configured test register delay: " +m3+" remaining margin: "+margin3);
+            Console.WriteLine("configured test register delay: " +m3+" remaining margin: "+margin3 + " FPGA clock cycles");
+            if(margin3 < 1) Console.WriteLine("INFO: Read of slow register timed out.");
 
             if(count == 0) {
                 Console.WriteLine("#########################################################################");
