@@ -429,4 +429,5 @@ busBridge3_RTL/busBridge3_RTL.runs/
 busBridge3_RTL/vivado.jou
 busBridge3_RTL/vivado_344.backup.jou
 busBridge3_RTL/busBridge3_RTL.hw/
+*.jou
 

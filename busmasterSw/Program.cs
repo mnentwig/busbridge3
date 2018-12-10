@@ -242,6 +242,16 @@ class Program {
     0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
                             };
 
+        // === optionally: cut metadata header ===
+        for(int ix = 0;ix < buf.Length-4;++ix) {
+            if((buf[ix] == 0xaa) && (buf[ix+1] == 0x99) && (buf[ix+2] == 0x55) && (buf[ix+3] == 0x66)) {
+                byte[] tmp = new byte[buf.Length - ix];
+                Array.Copy(sourceArray: buf,sourceIndex: ix,destinationArray: tmp,destinationIndex: 0,length: buf.Length - ix);
+                buf = tmp;
+                break;
+            }
+        }
+
         // === bit reverse data ===
         for(int ix = 0;ix < buf.Length;++ix) {
             buf[ix] = bitReverse[buf[ix]];
@@ -300,11 +310,11 @@ class Program {
         jtag.state_testLogicReset();
         jtag.state_shiftIr();
         // https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf page 173 BYPASS == 0b111111
-        byte[] bufa = new byte[] { /* 3 x opcode for BYPASS */0xFF, 0xFF, 0xFF };
+        byte[] bufa = new byte[] { /* 3 x opcode for BYPASS */0xFF,0xFF,0xFF };
         jtag.rwNBits(24,bufa,false); // 3*6-bit opcode length
 
         // === get response ===
-        bufa = new byte[] { 0x01};
+        bufa = new byte[] { 0x01 };
         jtag.state_shiftDr();
         jtag.rwNBits(nBits: 8,data: bufa,read: true);
         bufa = jtag.getReadCopy(jtag.exec());
