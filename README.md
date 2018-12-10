@@ -97,19 +97,22 @@ There are a few annoying details that were worked around without losing clock cy
 
 On the bright side: Bitstream upload alone does not need most of the C# code.
 
-### In Vivado, the clock domain crossing gives a (methodology) warning!
-One of those "annoying" details... it's for a reason.
-
+### There are no synchronizers in the outbound (application-to-JTAG) clock domain crossing
 There are two clock domains:
-* The JTAG port (driven by TCK from the FTDI chip)
+* The JTAG port (driven by TCK from the FTDI chip, appears in any BSCANE2 primitive)
 * The application clock domain at a "higher" frequency (if in doubt, increase the FTDI clock divider to slow things down on the JTAG side)
 
-The crossing is unusual: no synchronizer is used as a conscious design decision. 
+Outbound data needs to be provided well in time ("guaranteed by design" and possibly checked at runtime via the read margin function). 
 
-If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. Adding a synchronizer at the slow JTAG frequency would cut heavily into the readback cycle count budget, providing no actual advantage.
-It is at the user's discretion to use appropriate constraints, exceptions, or insert a pair of (*ASYNC_REG=TRUE*) FFs if there is enough time.
+If return data arrives so late as to cause metastability, it is invalid in any case. The downstream logic is "robust" so it makes no difference. 
 
-Crossings are implemented using a toggle event in parallel to data that causes data to be sampled one cycle after a detected change.
+Adding a synchronizer at the slow JTAG frequency would cut heavily into the readback cycle count budget, providing no actual advantage.
+
+The user should review / edit the constraints for a specific application.
+
+The inbound crossing (JTAG to application) is more critical, as it needs to guarantee that parallel events are sampled correctly on a detected toggle event.
+
+At higher application clock frequencies it could make sense to delay the output of the toggle detector (JTAG to application) by an extra application clock cycle.
 
 ### Navigating the project
 There are three main folders:
