@@ -161,14 +161,16 @@ class Program {
             m.memTest8(memSize: memSize,baseAddr: ram,nIter: 40);
             m.memTest16(memSize: memSize,baseAddr: ram,nIter: 20);
             m.memTest32(memSize: memSize,baseAddr: ram,nIter: 10);
+
+            // === build one transaction (note: memTestxy has its own "exec()" internally) ===
             m.write(addr: 0x12345678,data: (uint)count&1);
             m.queryMargin(); // reset timing margin tracker
 
-            // execute read and check margin
-            m.readUInt32(addr: 0xF0000000);
+            // queue a read and check margin
+            m.readUInt32(addr: ram);
             int handle = m.queryMargin();
 
-            // execute read and check margin
+            // queue a read and check margin
             m.readUInt32(addr: 0x12345678);
             int handle2 = m.queryMargin();
 
@@ -179,9 +181,10 @@ class Program {
             int h0 = m.readUInt32(addr: regVarReadLen);
             int handle3 = m.queryMargin();
 
-            m.exec(); // all transactions to hardware
+            // === run in hardware ===
+            m.exec();
 
-            // === perform several reads and determine, how many FPGA clock cycles are left before a read timeout ===
+            // === determine for the reads, how many FPGA clock cycles were left before a read timeout ===
             UInt16 margin = m.getUInt16(handle);
             Console.WriteLine("readback margin 1: " + margin + " FPGA clock cycles");
             if(margin < 1) Console.WriteLine("WARNING: Read timed out. Slow down JTAG or increase FPGA clock frequency.");
