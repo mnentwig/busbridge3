@@ -40,6 +40,8 @@ Open _busBridge3_RTL/busBridge3_RTL.xpr_ in _Vivado 2018.1_. Select _PROGRAM AND
 ##### Hardware installation
 Connect a [CMOD A7/35T](https://store.digilentinc.com/cmod-a7-breadboardable-artix-7-fpga-module/) module to USB, disconnect any other Digilent-supported USB devices. If necessary, install FTDI's D2XX drivers (see below).
 
+Other compatible boards should require minimal or no changes, since the example design does not use any pins (clk taken internally from the on-board ring oscillator).
+
 ##### Compile: Visual Studio (Microsoft)
 * In _Visual Studio 2017_ e.g. Community Edition, open _busmasterSw/busmasterSw.sln_
 * Press F5 to build and run (any combination of Debug/Release/Any CPU/x86/x64 should work)
