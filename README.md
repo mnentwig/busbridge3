@@ -11,7 +11,7 @@ Xilinx 7-series FTDI-FPGA interface through JTAG with 125 us roundtrip latency.
 * protocol-based bus-style interface (built on top of bytestream)
 * JTAG bitstream uploader
 
-Compared to a UART, this implementation is based on FTDI's MPSSE mode and achieves ~5x throughput (approaching the FTDI MPSSE hardware limit of 30 MBit/s) and ~5x better latency (in some configurations reaching the theoretical limit of 3 transactions per [USB 2.0 125 us microframe](http://www.usbmadesimple.co.uk/ums_6.htm), that is "ping-pong-ping". However, 125 us is more typical ("ping-pong"). That is, the interface can reliably handle 8000 independent command-response transactions per second, on some machines approaching 12000. A USB hub will increase latency significantly.
+Compared to a UART, this implementation is based on FTDI's MPSSE mode and achieves ~5x throughput (approaching the FTDI MPSSE hardware limit of 30 MBit/s) and ~5x better latency (in some configurations reaching the theoretical limit of 3 transactions per [USB 2.0 125 us microframe](http://www.usbmadesimple.co.uk/ums_6.htm), that is "ping-pong-ping". However, 125 us is more typical ("ping-pong"). In other words, the interface can quite reliably handle 8000 sequential command-response transactions per second, on some machines approaching 12000. Not surprisingly, a USB hub will increase latency significantly.
 
 Most Xilinx-boards support FTDI-based JTAG in a [standard configuration](https://www.ftdichip.com/Support/Documents/AppNotes/AN_129_FTDI_Hi_Speed_USB_To_JTAG_Example.pdf) with correct pinout for using [MPSSE-mode](https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf). 
 
@@ -31,7 +31,7 @@ Optionally, application code can query the remaining number of clock cycles for 
 The bus-style interface is built on top of a bytestream layer, where bytes sent from the PC are provided to the FPGA fabric without any protocol. An example for standalone use of this mode (which is conceptually close to SPI) is included.
 
 ### Bitstream uploader
-A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently.
+A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently. The bitstream uploader also works for the PL part of Zynq devices if the IR length is zero-padded from 6 to 10 bits (0000 is an invalid IR opcode for the ARM core, which is equivalent to BYPASS).
 
 ### Running the demo project / Versions
 ##### Bitstream compilation
