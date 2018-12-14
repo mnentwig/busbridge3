@@ -31,7 +31,7 @@ Optionally, application code can query the remaining number of clock cycles for 
 The bus-style interface is built on top of a bytestream layer, where bytes sent from the PC are provided to the FPGA fabric without any protocol. An example for standalone use of this mode (which is conceptually close to SPI) is included.
 
 ### Bitstream uploader
-A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently. The bitstream uploader also works for the PL part of Zynq devices if the IR length is zero-padded from 6 to 10 bits (0000 is an invalid IR opcode for the ARM core, which is equivalent to BYPASS).
+A .bit file can be uploaded, which e.g. simplifies version management over using flash memory. This feature can be used independently. The bitstream uploader also works for the PL part of Zynq devices if the length of JTAG IR opcodes is zero-padded from 6 to 10 bits (0000 is invalid for the ARM core, which is interpreted as BYPASS).
 
 ### Running the demo project / Versions
 ##### Bitstream compilation
