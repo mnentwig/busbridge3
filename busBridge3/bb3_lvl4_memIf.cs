@@ -35,11 +35,17 @@ namespace busbridge3 {
             ADDRINC = 1,    // set address increment state. Note: 0 is valid
             WORDWIDTH = 2,  // set wordwidth in bytes (minus one)
             NWORDS = 3,     // set packet size in words (minus one)
-            ADDRWRITE = 4,  // set address then write packet
+            ADDRWRITE4 = 4,  // set 32-bit address then write packet
             WRITE = 5,      // write packet to next address (omit redundant address in message)
-            ADDRREAD = 6,   // set address and read
+            ADDRREAD4 = 6,   // set 32-bit address and read
             READ = 7,       // read packet from next address (omit redundant address in message)
-            QUERYMARGIN = 8 // query and reset the timing margin register
+            QUERYMARGIN = 8, // query and reset the timing margin register
+            ADDRWRITE3 = 9,  // set 24-bit address then write packet
+            ADDRWRITE2 = 10,  // set 16-bit address then write packet
+            ADDRWRITE1 = 11,  // set 8-bit address then write packet
+            ADDRREAD3 = 12,   // set 24-bit address and read
+            ADDRREAD2 = 13,   // set 16-bit address and read
+            ADDRREAD1 = 14   // set 8-bit address and read
         }
 
         public memIf_cl(ftdi_jtag jtag, int user = 1) {
@@ -153,6 +159,30 @@ namespace busbridge3 {
             this.buf[this.nBuf++] =                 (byte)((val >> 24) & 0xFF);
         }
 
+        /// <summary>Push 24 LSBs nto the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)</summary>
+        /// <param name="val">value to write</param>
+        private void feedUInt32_24bit(UInt32 val) {
+            this.provideBuf(3);
+            this.buf[this.nBuf++] =                 (byte)((val >> 0) & 0xFF);
+            this.buf[this.nBuf++] =                 (byte)((val >> 8) & 0xFF);
+            this.buf[this.nBuf++] =                 (byte)((val >> 16) & 0xFF);
+        }
+
+        /// <summary>Push 16 LSBs nto the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)</summary>
+        /// <param name="val">value to write</param>
+        private void feedUInt32_16bit(UInt32 val) {
+            this.provideBuf(2);
+            this.buf[this.nBuf++] =                 (byte)((val >> 0) & 0xFF);
+            this.buf[this.nBuf++] =                 (byte)((val >> 8) & 0xFF);
+        }
+
+        /// <summary>Push 8 LSBs nto the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder</summary>
+        /// <param name="val">value to write</param>
+        private void feedUInt32_8bit(UInt32 val) {
+            this.provideBuf(1);
+            this.buf[this.nBuf++] =                 (byte)((val >> 0) & 0xFF);
+        }
+
         /// <summary>Push a 32-bit word into the internal write buffer to appear at the output of the FPGA's JTAG USERx decoder (low byte first)</summary>
         /// <param name="val">value to write</param>
         private void feedInt32(Int32 val) {
@@ -179,9 +209,25 @@ namespace busbridge3 {
                 // === send WRITE command (HW address pointer is correct) ===
                 this.feedUInt8((byte)cmd_e.WRITE);
             } else {
-                // === send ADDRWRITE command (HW address pointer needs to be set) ===
-                this.feedUInt8((byte)cmd_e.ADDRWRITE);
-                this.feedUInt32(addr); // parameter to ADDRWRITE
+                // === send ADDRWRITEx command (HW address pointer needs to be set) ===
+                if((addr & 0xFFFFFF00) == 0) { 
+                    // === send ADDRWRITE1 command with 8-bit address
+                    this.feedUInt8((byte)cmd_e.ADDRWRITE1);
+                    this.feedUInt32_8bit(addr); // parameter to ADDRWRITE1
+                } else if((addr & 0xFFFF0000) == 0) {
+                    // === send ADDRWRITE2 command with 16-bit address ===
+                    this.feedUInt8((byte)cmd_e.ADDRWRITE2);
+                    this.feedUInt32_16bit(addr); // parameter to ADDRWRITE2
+                } else if((addr & 0xFF000000) == 0) {
+                    // === send ADDRWRITE3 command with 24-bit address ===
+                    this.feedUInt8((byte)cmd_e.ADDRWRITE3);
+                    this.feedUInt32_24bit(addr); // parameter to ADDRWRITE3
+                } else {
+                    // === send ADDRWRITE4 command ===
+                    this.feedUInt8((byte)cmd_e.ADDRWRITE4);
+                    this.feedUInt32(addr); // parameter to ADDRWRITE4
+                }
+
                 this.addr = addr;
             }
 
@@ -273,9 +319,25 @@ namespace busbridge3 {
                 // === send READ command (HW address pointer is correct) ===
                 this.feedUInt8((byte)cmd_e.READ);
             } else {
-                // === send ADDRREAD command (HW address pointer needs to be set) ===
-                this.feedUInt8((byte)cmd_e.ADDRREAD);
-                this.feedUInt32(addr); // parameter to ADDRREAD
+                // === send ADDRREADx command (HW address pointer needs to be set) ===
+                if((addr & 0xFFFFFF00) == 0) {
+                    // === send ADDRREAD1 command with 8-bit address
+                    this.feedUInt8((byte)cmd_e.ADDRREAD1);
+                    this.feedUInt32_8bit(addr); // parameter to ADDRREAD1
+                } else if((addr & 0xFFFF0000) == 0) {
+                    // === send ADDRWRITE2 command with 16-bit address ===
+                    this.feedUInt8((byte)cmd_e.ADDRREAD2);
+                    this.feedUInt32_16bit(addr); // parameter to ADDRWREAD2
+                } else if((addr & 0xFF000000) == 0) {
+                    // === send ADDRREAD3 command with 24-bit address ===
+                    this.feedUInt8((byte)cmd_e.ADDRREAD3);
+                    this.feedUInt32_24bit(addr); // parameter to ADDRREAD3
+                } else {
+                    // === send ADDRREAD4 command ===
+                    this.feedUInt8((byte)cmd_e.ADDRREAD4);
+                    this.feedUInt32(addr); // parameter to ADDRREAD4
+                }
+
                 this.addr = addr;
             }
             // === advance address to HW state at end of operation ===

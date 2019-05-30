@@ -120,11 +120,17 @@ module busBridge3
    localparam STATE_ADDRINC = 8'd1;
    localparam STATE_WORDWIDTH = 8'd2;
    localparam STATE_NWORDS = 8'd3;
-   localparam STATE_ADDRWRITE = 8'd4;
+   localparam STATE_ADDRWRITE4 = 8'd4;
    localparam STATE_WRITE = 8'd5;
-   localparam STATE_ADDRREAD = 8'd6;
+   localparam STATE_ADDRREAD4 = 8'd6;
    localparam STATE_READ = 8'd7;
    localparam STATE_MARGIN = 8'd8;
+   localparam STATE_ADDRWRITE3 = 8'd9;
+   localparam STATE_ADDRWRITE2 = 8'd10;
+   localparam STATE_ADDRWRITE1 = 8'd11;
+   localparam STATE_ADDRREAD3 = 8'd12;
+   localparam STATE_ADDRREAD2 = 8'd13;
+   localparam STATE_ADDRREAD1 = 8'd14;
    reg [1:0] 	     nRemMinusOne = 2'd0;
    reg [7:0] 	     state = STATE_IDLE;
    reg [31:0] 	     addr = 32'dx;
@@ -189,18 +195,42 @@ module busBridge3
 		 // === parse command token ===
 		 // note: token usually becomes the new state
 		 case (i_dataRx)
-		   STATE_ADDRWRITE: begin
+		   STATE_ADDRWRITE4: begin
 		      state <= i_dataRx; 
 		      nRemMinusOne <= 2'd3;
+		   end
+		   STATE_ADDRWRITE3: begin
+		      state <= i_dataRx; 
+		      nRemMinusOne <= 2'd2;
+		   end
+		   STATE_ADDRWRITE2: begin
+		      state <= i_dataRx; 
+		      nRemMinusOne <= 2'd1;
+		   end
+		   STATE_ADDRWRITE1: begin
+		      state <= i_dataRx; 
+		      nRemMinusOne <= 2'd0;
 		   end
 		   STATE_WRITE: begin
 		      state <= i_dataRx;
 		      countNWords <= config_nWordsMinusOne;
 		      nRemMinusOne <= config_wordwidthMinusOne;      
 		   end
-		   STATE_ADDRREAD: begin
+		   STATE_ADDRREAD4: begin
 		      state <= i_dataRx; 
 		      nRemMinusOne <= 2'd3;
+		   end
+		   STATE_ADDRREAD3: begin
+		      state <= i_dataRx; 
+		      nRemMinusOne <= 2'd2;
+		   end
+		   STATE_ADDRREAD2: begin
+		      state <= i_dataRx; 
+		      nRemMinusOne <= 2'd1;
+		   end
+		   STATE_ADDRREAD1: begin
+		      state <= i_dataRx; 
+		      nRemMinusOne <= 2'd0;
 		   end
 		   STATE_ADDRINC: begin
 		      state <= i_dataRx; 
@@ -235,14 +265,41 @@ module busBridge3
 		   end
 		 endcase
 	      end
-	      STATE_ADDRWRITE: begin 
+	      STATE_ADDRWRITE4: begin 
 		 addr <= nextShiftIn;
 		 state <= STATE_WRITE;
 		 countNWords <= config_nWordsMinusOne;
 		 nRemMinusOne <= config_wordwidthMinusOne;      
 	      end
-	      STATE_ADDRREAD: begin
+	      STATE_ADDRWRITE3: begin 
+		 addr <= {8'd0, nextShiftIn[31:8]};
+		 state <= STATE_WRITE;
+		 countNWords <= config_nWordsMinusOne;
+		 nRemMinusOne <= config_wordwidthMinusOne;      
+	      end
+	      STATE_ADDRWRITE2: begin 
+		 addr <= {16'd0, nextShiftIn[31:16]};
+		 state <= STATE_WRITE;
+		 countNWords <= config_nWordsMinusOne;
+		 nRemMinusOne <= config_wordwidthMinusOne;      
+	      end
+	      STATE_ADDRWRITE1: begin 
+		 addr <= {24'd0, nextShiftIn[31:24]};
+		 state <= STATE_WRITE;
+		 countNWords <= config_nWordsMinusOne;
+		 nRemMinusOne <= config_wordwidthMinusOne;      
+	      end
+	      STATE_ADDRREAD4: begin
 		 doRead(nextShiftIn, config_nWordsMinusOne);
+	      end
+	      STATE_ADDRREAD3: begin
+		 doRead({8'd0, nextShiftIn[31:8]}, config_nWordsMinusOne);
+	      end
+	      STATE_ADDRREAD2: begin
+		 doRead({16'd0, nextShiftIn[31:16]}, config_nWordsMinusOne);
+	      end
+	      STATE_ADDRREAD1: begin
+		 doRead({24'd0, nextShiftIn[31:24]}, config_nWordsMinusOne);
 	      end
 	      STATE_ADDRINC: begin 
 		 config_addrInc <= nextShiftIn[31:24];
@@ -470,7 +527,7 @@ module top();
    // === demo slave 0 (RAM) ===
    wire [31:0] 	    MEM_outData;
    wire 	    MEM_ack;   
-   testmem #(.ADDRVAL(32'hF0000000))iMem
+   testmem #(.ADDRVAL(32'h00000000))iMem
      (.i_clk(clk), 
       .i_addr(busAddr), 
       .i_we(busWe), 
@@ -496,7 +553,7 @@ module top();
    reg 		       R1_ack = 1'b0;
    always @(posedge clk) begin
       R1_ack <= 1'b0;      
-      if (busAddr == 32'h87654321) begin
+      if (busAddr == 32'h00ABCDEF) begin
 	 if (busWe) R1 <= busData;
 	 if (busRe) R1_ack <= 1'b1;
       end

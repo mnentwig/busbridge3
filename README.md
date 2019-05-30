@@ -136,3 +136,7 @@ Bitstream upload will take longer, and reported read margins should increase.
 
 ### Shouldn't I get 480 MBit/s?
 Check the *parallel* mode of the FTDI chip on two devices simultaneously (MPSSE is, after all, still serial)
+
+### Versions (see git tags)
+1.0 initial release
+1.1 added 8, 16, 24 bit address modes (may reduce overhead significantly if "hot" registers are placed in the lower bits of the address space)

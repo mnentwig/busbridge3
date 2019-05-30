@@ -17,13 +17,13 @@ create_clock -period 33.330 -name USER_CLK -waveform {0.000 16.660} [list [get_p
 # demand that the spread between crossing signals remains within one period of the application clock (approx.)
 # then sample one application clock cycle after the crossing
 # Re-check this for a specific application
-# assuming
+# theoretical limits:
 # - 8 ns => 125 MHz max in application (critical for correct detection of parallel events on CDX)
 # - 30 ns => 32 MHz max in JTAG (largely academic, because the design should provide readback data much earlier, to be validated with built-in margin detection)
 set_min_delay 0 -from [get_clocks USER_CLK] -to [get_clocks RINGOSC_CLK]
 set_min_delay 0 -from [get_clocks RINGOSC_CLK] -to [get_clocks USER_CLK]
-set_max_delay 8 -from [get_clocks USER_CLK] -to [get_clocks RINGOSC_CLK]
-set_max_delay 30 -from [get_clocks RINGOSC_CLK] -to [get_clocks USER_CLK]
+set_max_delay 5 -datapath_only -from [get_clocks USER_CLK] -to [get_clocks RINGOSC_CLK]
+set_max_delay 5 -datapath_only -from [get_clocks RINGOSC_CLK] -to [get_clocks USER_CLK]
 
 # quick-and-dirty variant
 # set_false_path -from [get_clocks USER1_CLK] -to [get_clocks RINGOSC_CLK]

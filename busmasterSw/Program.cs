@@ -151,11 +151,11 @@ class Program {
 
             // === bus-interface based demo on USER1 opcode ===
             int memSize = 16384;
-            uint ram = 0xF0000000;
+            uint ram = 0x00000000; // RAM tests 8- and 16 bit address mode
 
             sw2.Reset(); sw2.Start();
             int nRep = 1000;
-            m.memTest32(memSize: 1,baseAddr: 0x87654321,nIter: nRep);
+            m.memTest32(memSize: 1,baseAddr: 0x00ABCDEF,nIter: nRep); // R2 tests 24-bit address modes
             Console.WriteLine("roundtrip time "+(1000*(double)sw2.ElapsedMilliseconds/(double)nRep)+" microseconds");
 
             m.memTest8(memSize: memSize,baseAddr: ram,nIter: 40);
@@ -163,7 +163,7 @@ class Program {
             m.memTest32(memSize: memSize,baseAddr: ram,nIter: 10);
 
             // === build one transaction (note: memTestxy has its own "exec()" internally) ===
-            m.write(addr: 0x12345678,data: (uint)count&1);
+            m.write(addr: 0x12345678,data: (uint)count&1); // tests 32-bit address mode
             m.queryMargin(); // reset timing margin tracker
 
             // queue a read and check margin
